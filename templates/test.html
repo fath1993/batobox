@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+<h1>nothing</h1>
+<script>
+    check_cors()
+    function check_cors() {
+        const formData = new FormData();
+        formData.append('username', 'admin')
+        formData.append('password', 'amir1372')
+        formData.append('csrfmiddlewaretoken', '{{ csrf_token }}')
+
+        fetch('http://157.90.70.136/account/api/auth-simple/', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            console.log('success')
+        })
+        .catch(error => {
+            console.log(error)
+        });
+    }
+</script>
+</body>
+</html>
