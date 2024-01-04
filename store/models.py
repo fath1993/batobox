@@ -77,6 +77,7 @@ class RequestedProduct(models.Model):
     batobox_currency_exchange_commission = models.TextField(null=True, blank=True, verbose_name='اطلاعات کمیسیون')
     weight = models.PositiveIntegerField(null=True, blank=True, verbose_name='وزن به گرم')
     description = models.TextField(null=True, blank=True, verbose_name='توضیحات کاربر')
+    numbers = models.PositiveSmallIntegerField(default=0, null=True, blank=True, verbose_name='تعداد')
 
     product_price = models.PositiveIntegerField(null=True, blank=True, verbose_name='قیمت محصول به واحد ارز')
     batobox_shipping_price = models.PositiveIntegerField(null=True, blank=True, verbose_name='قیمت حمل و نقل به واحد ارز')

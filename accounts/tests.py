@@ -64,7 +64,8 @@ def test_register():
     data = {
         'phone_number': '09125502517',
         'password': 'amir1888',
-        'full_name': 'امیرحسین فتح اللهی',
+        'first_name': 'امیرحسین',
+        'last_name': 'فتح اللهی',
         'email': 'dj1372@gmail.com',
         'birthday': '1372/05/23',
         'province': 'تهران',
@@ -105,7 +106,8 @@ def test_account(user_active_token, method_name):
             print(str(e))
     elif method_name == 'put':
         data = {
-            'full_name': 'امیرحسین بارانی',
+            'first_name': 'امیرحسین',
+            'last_name': 'بارانی',
             'birthday': '1372/05/23',
         }
         try:

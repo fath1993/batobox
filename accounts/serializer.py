@@ -1,6 +1,13 @@
 from rest_framework import serializers
 
-from accounts.models import Order, Transaction
+from accounts.models import Order, Transaction, Profile
+
+
+class ProfileSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Profile
+        fields = "__all__"
 
 
 class OrderSerializer(serializers.ModelSerializer):

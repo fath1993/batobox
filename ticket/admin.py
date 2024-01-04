@@ -17,7 +17,7 @@ class TicketAdmin(admin.ModelAdmin):
     readonly_fields = (
         'created_at',
         'updated_at',
-        'created_by',
+        # 'created_by',
         'updated_by',
     )
 

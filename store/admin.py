@@ -73,9 +73,8 @@ class BatoboxCurrencyExchangeCommissionAdmin(admin.ModelAdmin):
 class ProductAdmin(admin.ModelAdmin):
     list_display = (
         'link',
-        'currency',
-        'weight',
         'description',
+        'final_price',
     )
 
     readonly_fields = (
@@ -90,6 +89,7 @@ class ProductAdmin(admin.ModelAdmin):
         'batobox_currency_exchange_commission',
         'weight',
         'description',
+        'numbers',
         'product_price',
         'batobox_shipping_price',
         'final_price',

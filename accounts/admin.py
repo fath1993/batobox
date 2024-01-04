@@ -6,8 +6,6 @@ from accounts.models import Profile, SMSAuthCode, Order, Transaction, PaymentCod
 class ProfileAdmin(admin.ModelAdmin):
     list_display = (
         'user',
-        'mobile_phone_number',
-        'landline',
         'wallet_balance',
     )
 
@@ -17,18 +15,15 @@ class ProfileAdmin(admin.ModelAdmin):
 
     fields = (
         'user',
-        'mobile_phone_number',
+        'first_name',
+        'last_name',
         'landline',
         'birthday',
         'province',
         'city',
-        'address',
         'zip_code',
-
         'wallet_balance',
-        'wallet_balance_allow_change_code',
-        'wallet_balance_code_expiry_date',
-
+        'address',
         'like_list',
         'wish_list',
         'temp_card',

@@ -15,6 +15,7 @@ from knox.auth import TokenAuthentication
 from rest_framework.views import APIView
 from django.contrib.auth.signals import user_logged_out
 from accounts.models import Profile, SMSAuthCode, Order, Transaction, PaymentCode
+from accounts.serializer import ProfileSerializer
 from batobox.settings import BASE_URL, ZARINPAL_API_KEY
 from custom_logs.models import custom_log
 from utilities.http_metod import fetch_data_from_http_post, fetch_single_file_from_http_files
@@ -300,26 +301,78 @@ class Register(APIView):
         try:
             front_input = json.loads(request.body)
             try:
-                phone_number = front_input['phone_number']
-                password = front_input['password']
-                full_name = front_input['full_name']
-                email = front_input['email']
-                birthday = front_input['birthday']
-                province = front_input['province']
-                city = front_input['city']
-                address = front_input['address']
-                zip_code = front_input['zip_code']
-
-                if phone_number is None or phone_number == '':
+                try:
+                    phone_number = front_input['phone_number']
+                    if phone_number == '':
+                        phone_number = None
+                except:
+                    phone_number = None
+                if not phone_number:
                     print('شماره همراه خالی است')
                     return JsonResponse(create_json('post', 'درخواست ثبت نام', 'ناموفق', f'شماره همراه خالی است'))
-                if password is None or password == '':
+                try:
+                    password = front_input['password']
+                    if password == '':
+                        password = None
+                except:
+                    password = None
+                if not password:
                     print('کلمه عبور خالی است')
                     return JsonResponse(create_json('post', 'درخواست ثبت نام', 'ناموفق', f'کلمه عبور خالی است'))
                 if len(str(password)) < 8:
                     print('کلمه عبور کمتر از 8 کاراکتر است')
                     return JsonResponse(
                         create_json('post', 'درخواست ثبت نام', 'ناموفق', f'کلمه عبور کمتر از 8 کاراکتر است'))
+
+                try:
+                    first_name = front_input['first_name']
+                    if first_name == '':
+                        first_name = None
+                except:
+                    first_name = None
+                try:
+                    last_name = front_input['last_name']
+                    if last_name == '':
+                        last_name = None
+                except:
+                    last_name = None
+                try:
+                    email = front_input['email']
+                    if email == '':
+                        email = None
+                except:
+                    email = None
+                try:
+                    birthday = front_input['birthday']
+                    if birthday == '':
+                        birthday = None
+                except:
+                    birthday = None
+                try:
+                    province = front_input['province']
+                    if province == '':
+                        province = None
+                except:
+                    province = None
+                try:
+                    city = front_input['city']
+                    if city == '':
+                        city = None
+                except:
+                    city = None
+                try:
+                    address = front_input['address']
+                    if address == '':
+                        address = None
+                except:
+                    address = None
+                try:
+                    zip_code = front_input['zip_code']
+                    if zip_code == '':
+                        zip_code = None
+                except:
+                    zip_code = None
+
                 if birthday:
                     try:
                         birthday = str(birthday).split('/')
@@ -332,11 +385,27 @@ class Register(APIView):
                                                         f'تاریخ تولد ارسالی با مقدار {birthday} صحیح نیست'))
                 try:
                     user = User.objects.get(username=phone_number)
+                    profile = user.user_profile
                     if user.is_active:
                         print(f'اکانت مورد درخواست با شماره {phone_number} سامانه ثبت شده است')
                         return JsonResponse(create_json('post', 'درخواست ثبت نام', 'ناموفق',
                                                         f'اکانت مورد درخواست با شماره {phone_number} سامانه ثبت شده است'))
                     else:
+                        if birthday:
+                            profile.birthday = birthday
+                        if first_name:
+                            profile.first_name = first_name
+                        if last_name:
+                            profile.last_name = last_name
+                        if province:
+                            profile.province = province
+                        if city:
+                            profile.city = city
+                        if address:
+                            profile.address = address
+                        if zip_code:
+                            profile.zip_code = zip_code
+                        profile.save()
                         try:
                             sms_auth_code = SMSAuthCode.objects.get(phone_number=phone_number)
                             time_spent = (jdatetime.datetime.now() - sms_auth_code.created_at).total_seconds()
@@ -378,19 +447,24 @@ class Register(APIView):
                     user = User.objects.create_user(
                         username=phone_number,
                         password=password,
-                        first_name=full_name,
                         email=email,
                         is_active=False,
-
                     )
                     profile = user.user_profile
                     if birthday:
                         profile.birthday = birthday
-                    profile.province = province
-                    profile.mobile_phone_number = phone_number
-                    profile.city = city
-                    profile.address = address
-                    profile.zip_code = zip_code
+                    if first_name:
+                        profile.first_name = first_name
+                    if last_name:
+                        profile.last_name = last_name
+                    if province:
+                        profile.province = province
+                    if city:
+                        profile.city = city
+                    if address:
+                        profile.address = address
+                    if zip_code:
+                        profile.zip_code = zip_code
                     profile.save()
                     random_otp = random.randint(100000, 999999)
                     new_sms_auth_code = SMSAuthCode.objects.create(
@@ -501,36 +575,18 @@ class Account(APIView):
         return JsonResponse({'message': 'not allowed'})
 
     def post(self, request, *args, **kwargs):
-        try:
-            user = request.user
-            profile = user.user_profile
-            if profile.birthday:
-                profile_birthday = profile.birthday.strftime('%Y/%m/%d')
-            else:
-                profile_birthday = ''
-
-            response_json = {
-                'method': 'post',
-                'request': 'درخواست اطلاعات حساب',
-                'result': 'موفق',
-                'username': user.username,
-                'email': user.email,
-                'mobile_phone_number': profile.mobile_phone_number,
-                'landline': profile.landline,
-                'birthday': profile_birthday,
-                'province': profile.province,
-                'city': profile.city,
-                'address': profile.address,
-                'zip_code': profile.zip_code,
-                'wallet_balance': profile.wallet_balance,
-                'like_list': profile.like_list,
-                'wish_list': profile.wish_list,
-                'temp_card': profile.temp_card,
-            }
-            return JsonResponse(response_json)
-        except Exception as e:
-            custom_log(str(e))
-            return JsonResponse(create_json('post', 'اطلاعات پروفایل', 'ناموفق', f'{str(e)}'))
+        profile = Profile.objects.filter(user=request.user)
+        if profile.count() == 0:
+            return JsonResponse(
+                create_json('post', 'جزئیات حساب کاربری', 'ناموفق', f'حساب کاربری یافت نشد'))
+        serializer = ProfileSerializer(profile, many=True)
+        json_response_body = {
+            'method': 'post',
+            'request': 'جزئیات حساب کاربری',
+            'result': 'موفق',
+            'data': serializer.data,
+        }
+        return JsonResponse(json_response_body)
 
     def put(self, request, *args, **kwargs):
         try:
@@ -544,9 +600,13 @@ class Account(APIView):
             except:
                 password = None
             try:
-                full_name = front_input['full_name']
+                first_name = front_input['first_name']
             except:
-                full_name = None
+                first_name = None
+            try:
+                last_name = front_input['last_name']
+            except:
+                last_name = None
             try:
                 email = front_input['email']
             except:
@@ -597,8 +657,6 @@ class Account(APIView):
                 user.set_password(str(password))
             if email:
                 user.email = email
-            if full_name:
-                user.first_name = full_name
             user.save()
             if phone_number:
                 profile.mobile_phone_number = phone_number
@@ -614,6 +672,10 @@ class Account(APIView):
                     print('تاریخ تولد بدرستی ارسال نشده است')
                     return JsonResponse(create_json('post', 'درخواست ویرایش اطلاعات حساب', 'ناموفق',
                                                     f'تاریخ تولد ارسالی با مقدار {birthday} صحیح نیست'))
+            if first_name:
+                profile.first_name = first_name
+            if last_name:
+                profile.last_name = last_name
             if province:
                 profile.province = province
             if city:
@@ -632,26 +694,19 @@ class Account(APIView):
                 profile.temp_card = temp_card
             profile.save()
 
-            response_json = {
-                'method': 'put',
-                'request': 'درخواست ویرایش اطلاعات حساب',
+            profile = Profile.objects.filter(user=request.user)
+            if profile.count() == 0:
+                return JsonResponse(
+                    create_json('post', 'جزئیات حساب کاربری', 'ناموفق', f'حساب کاربری یافت نشد'))
+            serializer = ProfileSerializer(profile, many=True)
+            json_response_body = {
+                'method': 'post',
+                'request': 'ویرایش حساب کاربری',
                 'result': 'موفق',
-                'username': user.username,
-                'email': user.email,
-                'full_name': user.first_name,
-                'mobile_phone_number': profile.mobile_phone_number,
-                'landline': profile.landline,
-                'birthday': profile.birthday.strftime('%Y/%m/%d'),
-                'province': profile.province,
-                'city': profile.city,
-                'address': profile.address,
-                'zip_code': profile.zip_code,
-                'wallet_balance': profile.wallet_balance,
-                'like_list': profile.like_list,
-                'wish_list': profile.wish_list,
-                'temp_card': profile.temp_card,
+                'data': serializer.data,
             }
-            return JsonResponse(response_json)
+            return JsonResponse(json_response_body)
+
         except Exception as e:
             print(str(e))
             return JsonResponse(create_json('post', 'درخواست ویرایش اطلاعات حساب', 'ناموفق', f'ورودی صحیح نیست.'))

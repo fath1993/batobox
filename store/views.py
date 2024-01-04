@@ -151,6 +151,17 @@ class ProductPriceCalculator(APIView):
                     description = None
             except:
                 description = None
+            try:
+                numbers = front_input['numbers']
+                if numbers == '':
+                    numbers = None
+                if numbers is not None:
+                    try:
+                        numbers = int(numbers)
+                    except:
+                        numbers = None
+            except:
+                numbers = None
 
             if product_link:
                 default_provided_url = product_link

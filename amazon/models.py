@@ -14,9 +14,10 @@ from storage.models import Storage
 
 
 class Category(models.Model):
-    parent = models.ForeignKey("self", related_name='parent_category', on_delete=models.SET_NULL, null=True, blank=True,
+    parent = models.ForeignKey('self', related_name='parent_category', on_delete=models.SET_NULL, null=True, blank=True,
                                verbose_name='دسته مادر')
     parent_tree = models.TextField(null=True, blank=True, editable=False, verbose_name='درخت رابطه')
+    children = models.ManyToManyField('self', blank=True, editable=False, verbose_name='زیرمجموعه ها')
     title_fa = models.CharField(max_length=255, null=False, blank=False, verbose_name='عنوان فارسی')
     title_en = models.CharField(max_length=255, null=False, blank=False, verbose_name='عنوان انگلیسی')
     title_slug = models.SlugField(max_length=255, null=True, blank=True, allow_unicode=True, editable=False,
@@ -28,60 +29,11 @@ class Category(models.Model):
 
     def save(self, *args, **kwargs):
         self.title_slug = slugify(self.title_en, allow_unicode=True)
-        parent_tree_list = []
-        parent = self.parent
-        if parent:
-            if not parent.title_slug:
-                custom_title_slug = 'slug: null'
-            else:
-                custom_title_slug = parent.title_slug
-            if not parent.cat_image:
-                custom_cat_image_url = 'image: null'
-            else:
-                custom_cat_image_url = parent.cat_image.url
-            parent_tree_list.append([parent.title_fa, parent.title_en, custom_title_slug, custom_cat_image_url])
-            while True:
-                parent = parent.parent
-                if parent:
-                    if not parent.title_slug:
-                        custom_title_slug = 'slug: null'
-                    else:
-                        custom_title_slug = parent.title_slug
-                    if not parent.cat_image:
-                        custom_cat_image_url = 'image: null'
-                    else:
-                        custom_cat_image_url = parent.cat_image.url
-                    parent_tree_list.append(
-                        [parent.title_fa, parent.title_en, custom_title_slug, custom_cat_image_url])
-                else:
-                    break
-        else:
-            parent_tree_list.append('مادر است')
-        self.parent_tree = json.dumps(parent_tree_list)
         super().save(*args, **kwargs)
 
     class Meta:
         verbose_name = 'دسته'
         verbose_name_plural = 'دسته ها'
-
-
-@receiver(post_delete, sender=Category)
-def auto_update_parent_tree(sender, instance, **kwargs):
-    AutoUpdateAllParentTree(queryset='all').start()
-
-
-class AutoUpdateAllParentTree(threading.Thread):
-    def __init__(self, queryset):
-        super().__init__()
-        self.queryset = queryset
-
-    def run(self):
-        if self.queryset == 'all':
-            categories = Category.objects.filter()
-        else:
-            categories = self.queryset
-        for category in categories:
-            category.save()
 
 
 class Keyword(models.Model):
@@ -108,8 +60,11 @@ class AmazonProduct(models.Model):
     product_main_url = models.CharField(max_length=1000, null=True, blank=True,
                                         verbose_name='لینک اصلی محصول در آمازون')
     product_type = models.CharField(max_length=255, null=True, blank=True, verbose_name='نوع محصول')
-    title_fa = models.CharField(max_length=255, null=True, blank=True, verbose_name='عنوان فارسی')
-    title_en = models.CharField(max_length=255, null=True, blank=True, verbose_name='عنوان انگلیسی')
+
+    # this field should be CharField
+    title_fa = models.TextField(null=True, blank=True, verbose_name='عنوان فارسی')
+
+    title_en = models.TextField(null=True, blank=True, verbose_name='عنوان انگلیسی')
     slug_title = models.SlugField(max_length=255, null=True, blank=True, editable=False, allow_unicode=True,
                                   verbose_name='اسلاگ عنوان')
     description = models.TextField(null=True, blank=True, verbose_name='توضیحات')
@@ -120,11 +75,17 @@ class AmazonProduct(models.Model):
     product_brand_url = models.CharField(max_length=1000, null=True, blank=True,
                                          verbose_name='لینک برند محصول در آمازون')
     documents = models.ManyToManyField(Storage, related_name='product_documents', blank=True, verbose_name='مستندات')
+    downloaded_documents = models.BooleanField(default=False, verbose_name='داکیومنت ها دانلود شده')
+    variants = models.TextField(null=True, blank=True, verbose_name='variants')
+    variants_asins_flat = models.TextField(null=True, blank=True, verbose_name='variants_asins_flat')
+    has_size_guide = models.TextField(null=True, blank=True, verbose_name='has_size_guide')
+    size_guide_html = models.TextField(null=True, blank=True, verbose_name='size_guide_html')
     user_rating_count = models.PositiveSmallIntegerField(null=True, blank=True,
                                                          verbose_name='تعداد امتیاز دهندگان به محصول')
     rating_score = models.FloatField(null=True, blank=True, verbose_name='امتیاز محصول')
     main_image = models.ImageField(upload_to='product-image/', null=True, blank=True, verbose_name='تصویر اصلی محصول')
     images = models.ManyToManyField(Storage, related_name='product_images', blank=True, verbose_name='تصاویر')
+    downloaded_images = models.BooleanField(default=False, verbose_name='سایر تصاویر دانلود شده')
     feature_bullets = models.TextField(null=True, blank=True, verbose_name='ویژگی های کلیدی')
     attributes = models.TextField(null=True, blank=True, verbose_name='امکانات')
     weight = models.PositiveSmallIntegerField(null=True, blank=True, verbose_name='وزن بر اساس گرم')
@@ -133,6 +94,7 @@ class AmazonProduct(models.Model):
     # price
     currency = models.CharField(max_length=1000, null=True, blank=True, verbose_name='نماد ارز')
     base_price = models.FloatField(null=True, blank=True, verbose_name='قیمت پایه')
+    discounted_price = models.FloatField(null=True, blank=True, verbose_name='قیمت تخفیف خورده')
     shipping_price = models.FloatField(null=True, blank=True, verbose_name='قیمت پایه حمل و نقل از آمازون')
     total_price = models.FloatField(null=True, blank=True, verbose_name='قیمت نهایی')
     discount_percentage = models.IntegerField(null=True, blank=True, verbose_name='درصد تخفیف')
@@ -142,10 +104,10 @@ class AmazonProduct(models.Model):
     is_product_special = models.BooleanField(default=False, verbose_name='محصول ویژه')
 
     # seo
-    seo_title = models.CharField(max_length=1000, null=True, blank=True, verbose_name='seo_title')
-    seo_description = models.CharField(max_length=1000, null=True, blank=True, verbose_name='seo_description')
-    seo_keywords = models.CharField(max_length=1000, null=True, blank=True, verbose_name='seo_keywords')
-    slug = models.CharField(max_length=1000, null=True, blank=True, verbose_name='slug')
+    seo_title = models.TextField(null=True, blank=True, verbose_name='seo_title')
+    seo_description = models.TextField(null=True, blank=True, verbose_name='seo_description')
+    seo_keywords = models.TextField(null=True, blank=True, verbose_name='seo_keywords')
+    slug = models.TextField(null=True, blank=True, verbose_name='slug')
 
     # admin
     created_at = jmodel.jDateTimeField(auto_now_add=True, verbose_name='تاریخ ایجاد')

@@ -1,11 +1,12 @@
 import json
+import threading
 import time
 from django.contrib import messages
 from django.contrib import admin
 from django.core.exceptions import ValidationError
 from django.http import HttpResponse
 
-from amazon.models import AmazonProduct, Category, Keyword, AutoUpdateAllParentTree
+from amazon.models import AmazonProduct, Category, Keyword
 from amazon.views import AmazonUpdateProductDetail
 
 
@@ -15,12 +16,12 @@ class CategoryAdmin(admin.ModelAdmin):
         'parent',
         'title_fa',
         'title_en',
-        'parent_tree_view',
     )
 
     readonly_fields = (
         'title_slug',
         'parent_tree',
+        'children',
     )
 
     fields = (
@@ -30,18 +31,60 @@ class CategoryAdmin(admin.ModelAdmin):
         'title_slug',
         'cat_image',
 
+        'children',
         'parent_tree',
     )
 
-    @admin.display(description='درخت رابطه')
-    def parent_tree_view(self, obj):
-        return json.loads(obj.parent_tree)
-
-    @admin.action(description='بروز رسانی درخت رابطه')
+    @admin.action(description='بروز رسانی روابط')
     def update_parent_tree(self, request, queryset):
         AutoUpdateAllParentTree(queryset=queryset).start()
 
     actions = (update_parent_tree,)
+
+
+class AutoUpdateAllParentTree(threading.Thread):
+    def __init__(self, queryset):
+        super().__init__()
+        self.queryset = queryset
+
+    def run(self):
+        for category in self.queryset:
+            category.children.clear()
+            category.save()
+        for category in self.queryset:
+            parent_tree_list = []
+            parent = category.parent
+            if parent:
+                parent.children.add(category)
+                parent.save()
+                if not parent.title_slug:
+                    custom_title_slug = 'slug: null'
+                else:
+                    custom_title_slug = parent.title_slug
+                if not parent.cat_image:
+                    custom_cat_image_url = 'image: null'
+                else:
+                    custom_cat_image_url = parent.cat_image.url
+                parent_tree_list.append([parent.title_fa, parent.title_en, custom_title_slug, custom_cat_image_url])
+                while True:
+                    parent = parent.parent
+                    if parent:
+                        if not parent.title_slug:
+                            custom_title_slug = 'slug: null'
+                        else:
+                            custom_title_slug = parent.title_slug
+                        if not parent.cat_image:
+                            custom_cat_image_url = 'image: null'
+                        else:
+                            custom_cat_image_url = parent.cat_image.url
+                        parent_tree_list.append(
+                            [parent.title_fa, parent.title_en, custom_title_slug, custom_cat_image_url])
+                    else:
+                        break
+            else:
+                parent_tree_list.append('مادر است')
+            category.parent_tree = json.dumps(parent_tree_list)
+            category.save()
 
 
 @admin.register(Keyword)
@@ -67,7 +110,13 @@ class AmazonProductAdmin(admin.ModelAdmin):
     list_display = (
         'pk',
         'asin',
-        'title_en',
+        'weight',
+        'currency',
+        'base_price',
+        'discounted_price',
+        'shipping_price',
+        'total_price',
+        'discount_percentage',
     )
 
     readonly_fields = (
@@ -95,10 +144,16 @@ class AmazonProductAdmin(admin.ModelAdmin):
         'brand',
         'product_brand_url',
         'documents',
+        'downloaded_documents',
+        'variants',
+        'variants_asins_flat',
+        'has_size_guide',
+        'size_guide_html',
         'user_rating_count',
         'rating_score',
         'main_image',
         'images',
+        'downloaded_images',
         'feature_bullets',
         'attributes',
         'weight',
@@ -109,6 +164,7 @@ class AmazonProductAdmin(admin.ModelAdmin):
 
         'currency',
         'base_price',
+        'discounted_price',
         'shipping_price',
         'total_price',
         'discount_percentage',
@@ -136,44 +192,47 @@ class AmazonProductAdmin(admin.ModelAdmin):
         else:
             instance.updated_by = request.user
 
-        if not change:
-            amazon_asin = None
-            if not instance.asin:
-                if instance.product_root_url:
-                    if str(instance.product_root_url).find('https://www.amazon.ae/') != -1:
-                        product_link = instance.product_root_url.split('/')
-                        for section in product_link:
-                            if len(section) == 10:
-                                amazon_asin = section
-                if not instance.product_root_url and instance.product_main_url:
-                    if str(instance.product_main_url).find('https://www.amazon.ae/') != -1:
-                        product_link = instance.product_main_url.split('/')
-                        for section in product_link:
-                            if len(section) == 10:
-                                amazon_asin = section
-            if amazon_asin:
-                try:
-                    old_amazon_product = AmazonProduct.objects.get(asin=amazon_asin)
-                    self.message_user(request, f"محصول با asin {amazon_asin} از قبل موجود است", level='ERROR')
-                    form._save_related_allowed = False
-                    request.session['save_related_allowed'] = {'save_related_allowed': False}
-                    return
-                except:
-                    instance.asin = amazon_asin
-                    instance.save()
-                    form.save_m2m()
-                    request.session['save_related_allowed'] = {'save_related_allowed': True}
-                    return instance
-        else:
-            instance.save()
-            form.save_m2m()
-            request.session['save_related_allowed'] = {'save_related_allowed': True}
-            return instance
-
-    def save_related(self, request, form, formsets, change):
-        save_model_data = request.session.pop('save_related_allowed')
-        if save_model_data['save_related_allowed']:
-            super().save_related(request, form, formsets, change)
+        instance.save()
+        form.save_m2m()
+        return instance
+    #     if not change:
+    #         amazon_asin = None
+    #         if not instance.asin:
+    #             if instance.product_root_url:
+    #                 if str(instance.product_root_url).find('https://www.amazon.ae/') != -1:
+    #                     product_link = instance.product_root_url.split('/')
+    #                     for section in product_link:
+    #                         if len(section) == 10:
+    #                             amazon_asin = section
+    #             if not instance.product_root_url and instance.product_main_url:
+    #                 if str(instance.product_main_url).find('https://www.amazon.ae/') != -1:
+    #                     product_link = instance.product_main_url.split('/')
+    #                     for section in product_link:
+    #                         if len(section) == 10:
+    #                             amazon_asin = section
+    #         if amazon_asin:
+    #             try:
+    #                 old_amazon_product = AmazonProduct.objects.get(asin=amazon_asin)
+    #                 self.message_user(request, f"محصول با asin {amazon_asin} از قبل موجود است", level='ERROR')
+    #                 form._save_related_allowed = False
+    #                 request.session['save_related_allowed'] = {'save_related_allowed': False}
+    #                 return
+    #             except:
+    #                 instance.asin = amazon_asin
+    #                 instance.save()
+    #                 form.save_m2m()
+    #                 request.session['save_related_allowed'] = {'save_related_allowed': True}
+    #                 return instance
+    #     else:
+    #         instance.save()
+    #         form.save_m2m()
+    #         request.session['save_related_allowed'] = {'save_related_allowed': True}
+    #         return instance
+    #
+    # def save_related(self, request, form, formsets, change):
+    #     save_model_data = request.session.pop('save_related_allowed')
+    #     if save_model_data['save_related_allowed']:
+    #         super().save_related(request, form, formsets, change)
 
 
     @admin.action(description='دریافت اطلاعات جدید از rainforest api')

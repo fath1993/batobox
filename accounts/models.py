@@ -33,16 +33,17 @@ class SMSAuthCode(models.Model):
 class Profile(models.Model):
     user = models.OneToOneField(User, related_name='user_profile', on_delete=models.CASCADE, null=False, blank=False,
                                 editable=False, verbose_name='کاربر')
-    mobile_phone_number = models.CharField(max_length=255, null=True, blank=True, verbose_name='شماره همراه')
+    first_name = models.CharField(max_length=255, null=True, blank=True, verbose_name='نام')
+    last_name = models.CharField(max_length=255, null=True, blank=True, verbose_name='نام خانوادگی')
     landline = models.CharField(max_length=255, null=True, blank=True, verbose_name='شماره ثابت')
     birthday = jmodel.jDateField(null=True, blank=True, verbose_name='تاریخ تولد')
-    province = models.CharField(max_length=255, null=True, blank=True, verbose_name='ایالت')
+    province = models.CharField(max_length=255, null=True, blank=True, verbose_name='استان')
     city = models.CharField(max_length=255, null=True, blank=True, verbose_name='شهر')
-    address = models.CharField(max_length=255, null=True, blank=True, verbose_name='آدرس')
     zip_code = models.CharField(max_length=255, null=True, blank=True, verbose_name='کد پستی')
     wallet_balance = models.PositiveIntegerField(default=0, verbose_name='اعتبار کیف پول')
 
     # based on json
+    address = models.TextField(null=True, blank=True, verbose_name='آدرس')
     like_list = models.TextField(null=True, blank=True, verbose_name='لیست محصولات مورد علاقه')
     wish_list = models.TextField(null=True, blank=True, verbose_name='لیست خرید های احتمالی در آینده')
     temp_card = models.TextField(null=True, blank=True, verbose_name='محصولات در سبد خرید')

@@ -15,7 +15,7 @@ class Ticket(models.Model):
     created_at = jmodel.jDateTimeField(auto_now_add=True, verbose_name='تاریخ ایجاد')
     updated_at = jmodel.jDateTimeField(auto_now=True, verbose_name='تاریخ بروز رسانی')
     created_by = models.ForeignKey(User, related_name='ticket_created_by', on_delete=models.CASCADE, null=False,
-                                   blank=False, editable=False, verbose_name='ساخته شده توسط')
+                                   blank=False, editable=True, verbose_name='متعلق به')
     updated_by = models.ForeignKey(User, related_name='ticket_updated_by', on_delete=models.CASCADE, null=False,
                                    blank=False, editable=False, verbose_name='بروز شده توسط')
 
