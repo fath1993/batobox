@@ -35,15 +35,15 @@ class Profile(models.Model):
                                 editable=False, verbose_name='کاربر')
     first_name = models.CharField(max_length=255, null=True, blank=True, verbose_name='نام')
     last_name = models.CharField(max_length=255, null=True, blank=True, verbose_name='نام خانوادگی')
+    national_code = models.CharField(max_length=255, null=True, blank=True, verbose_name='کد ملی')
     landline = models.CharField(max_length=255, null=True, blank=True, verbose_name='شماره ثابت')
     birthday = jmodel.jDateField(null=True, blank=True, verbose_name='تاریخ تولد')
-    province = models.CharField(max_length=255, null=True, blank=True, verbose_name='استان')
-    city = models.CharField(max_length=255, null=True, blank=True, verbose_name='شهر')
-    zip_code = models.CharField(max_length=255, null=True, blank=True, verbose_name='کد پستی')
+    card_number = models.CharField(max_length=255, null=True, blank=True, verbose_name='شماره کارت')
+    isbn = models.CharField(max_length=255, null=True, blank=True, verbose_name='شماره شبا')
     wallet_balance = models.PositiveIntegerField(default=0, verbose_name='اعتبار کیف پول')
 
     # based on json
-    address = models.TextField(null=True, blank=True, verbose_name='آدرس')
+    location_details = models.TextField(null=True, blank=True, verbose_name='مشخصات مکانی')
     like_list = models.TextField(null=True, blank=True, verbose_name='لیست محصولات مورد علاقه')
     wish_list = models.TextField(null=True, blank=True, verbose_name='لیست خرید های احتمالی در آینده')
     temp_card = models.TextField(null=True, blank=True, verbose_name='محصولات در سبد خرید')
@@ -79,6 +79,22 @@ class Order(models.Model):
     products = models.ManyToManyField(RequestedProduct, blank=True, verbose_name='محصولات نهایی شده')
     order_status = models.CharField(max_length=255, choices=ORDER_STATUS, default='در حال بررسی', verbose_name='وضعیت سفارش')
     description = models.CharField(max_length=255, null=True, blank=True, verbose_name='توضیحات')
+
+    # user who has ordered product
+    first_name = models.CharField(max_length=255, null=True, blank=True, verbose_name='نام')
+    last_name = models.CharField(max_length=255, null=True, blank=True, verbose_name='نام خانوادگی')
+    national_code = models.CharField(max_length=255, null=True, blank=True, verbose_name='کد ملی')
+    mobile_phone_number = models.CharField(max_length=255, null=True, blank=True, verbose_name='شماره تماس همراه')
+    landline = models.CharField(max_length=255, null=True, blank=True, verbose_name='شماره تماس ثابت')
+    card_number = models.CharField(max_length=255, null=True, blank=True, verbose_name='شماره کارت')
+    isbn = models.CharField(max_length=255, null=True, blank=True, verbose_name='شماره شبا')
+    # user who will receive product
+    receiver_province = models.CharField(max_length=255, null=True, blank=True, verbose_name='استان گیرنده')
+    receiver_city = models.CharField(max_length=255, null=True, blank=True, verbose_name='شهر گیرنده')
+    receiver_zip_code = models.CharField(max_length=255, null=True, blank=True, verbose_name='کد پستی گیرنده')
+    receiver_address = models.CharField(max_length=255, null=True, blank=True, verbose_name='آدرس گیرنده')
+    receiver_mobile_phone_number = models.CharField(max_length=255, null=True, blank=True, verbose_name='شماره تماس همراه گیرنده')
+
     created_at = jmodel.jDateTimeField(auto_now_add=True, verbose_name='تاریخ ایجاد')
     updated_at = jmodel.jDateTimeField(auto_now=True, verbose_name='تاریخ بروز رسانی')
     created_by = models.ForeignKey(User, on_delete=models.CASCADE, null=False, blank=False, related_name='order_user_created_by', editable=False, verbose_name='کاربر')

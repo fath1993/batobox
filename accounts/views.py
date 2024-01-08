@@ -580,11 +580,14 @@ class Account(APIView):
             return JsonResponse(
                 create_json('post', 'جزئیات حساب کاربری', 'ناموفق', f'حساب کاربری یافت نشد'))
         serializer = ProfileSerializer(profile, many=True)
+        result_data = serializer.data
+        for data in result_data:
+            data['email'] = request.user.email
         json_response_body = {
             'method': 'post',
             'request': 'جزئیات حساب کاربری',
             'result': 'موفق',
-            'data': serializer.data,
+            'data': result_data,
         }
         return JsonResponse(json_response_body)
 
@@ -608,6 +611,14 @@ class Account(APIView):
             except:
                 last_name = None
             try:
+                national_code = front_input['national_code']
+            except:
+                national_code = None
+            try:
+                landline = front_input['landline']
+            except:
+                landline = None
+            try:
                 email = front_input['email']
             except:
                 email = None
@@ -616,21 +627,17 @@ class Account(APIView):
             except:
                 birthday = None
             try:
-                province = front_input['province']
+                location_details = front_input['location_details']
             except:
-                province = None
+                location_details = None
             try:
-                city = front_input['city']
+                card_number = front_input['card_number']
             except:
-                city = None
+                card_number = None
             try:
-                address = front_input['address']
+                isbn = front_input['isbn']
             except:
-                address = None
-            try:
-                zip_code = front_input['zip_code']
-            except:
-                zip_code = None
+                isbn = None
             try:
                 like_list = front_input['like_list']
             except:
@@ -676,16 +683,16 @@ class Account(APIView):
                 profile.first_name = first_name
             if last_name:
                 profile.last_name = last_name
-            if province:
-                profile.province = province
-            if city:
-                profile.city = city
-            if address:
-                profile.address = address
-            if zip_code:
-                profile.zip_code = zip_code
-            if province:
-                profile.province = province
+            if landline:
+                profile.landline = landline
+            if national_code:
+                profile.national_code = national_code
+            if card_number:
+                profile.card_number = card_number
+            if isbn:
+                profile.isbn = isbn
+            if location_details:
+                profile.location_details = location_details
             if like_list:
                 profile.like_list = like_list
             if wish_list:
@@ -697,10 +704,13 @@ class Account(APIView):
             profile = Profile.objects.filter(user=request.user)
             if profile.count() == 0:
                 return JsonResponse(
-                    create_json('post', 'جزئیات حساب کاربری', 'ناموفق', f'حساب کاربری یافت نشد'))
+                    create_json('post', 'ویرایش حساب کاربری', 'ناموفق', f'حساب کاربری یافت نشد'))
             serializer = ProfileSerializer(profile, many=True)
+            result_data = serializer.data
+            for data in result_data:
+                data['email'] = request.user.email
             json_response_body = {
-                'method': 'post',
+                'method': 'put',
                 'request': 'ویرایش حساب کاربری',
                 'result': 'موفق',
                 'data': serializer.data,

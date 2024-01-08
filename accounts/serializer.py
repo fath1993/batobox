@@ -14,11 +14,12 @@ class OrderSerializer(serializers.ModelSerializer):
 
     def to_representation(self, instance):
         ret = super().to_representation(instance)
-        ret['created_by'] = instance.crated_by.username
+        ret['created_by'] = instance.created_by.username
         ret['updated_by'] = instance.updated_by.username
         return ret
 
     class Meta:
+        depth = 1
         model = Order
         fields = "__all__"
 

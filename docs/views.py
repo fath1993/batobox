@@ -257,11 +257,8 @@ class Docs(APIView):
                                 'last_name': 'نام خانوادگی',
                                 'landline': 'شماره ثابت',
                                 'birthday': 'تاریخ تولد',
-                                'province': 'استان',
-                                'city': 'شهر',
-                                'zip_code': 'کد پستی',
                                 'wallet_balance': 'اعتبار حساب',
-                                'address': 'آدرس',
+                                'location_details': 'مشخصات مکانی',
                                 'like_list': 'علاقه مندی ها',
                                 'wish_list': 'ویش ها',
                                 'temp_card': 'سبد خرید موقت',
@@ -286,10 +283,10 @@ class Docs(APIView):
                             'email': 'ایمیل',
                             'landline': 'شماره ثابت',
                             'birthday': 'تاریخ تولد (در قالب 1372/05/23)',
-                            'province': 'استان',
-                            'city': 'شهر',
-                            'address': 'آدرس',
-                            'zip_code': 'کد پستی',
+                            'national_code': 'کد ملی',
+                            'card_number': 'شماره کارت',
+                            'isbn': 'شماره شبا',
+                            'location_details': 'مشخصات مکانی',
                             'like_list': 'لیست علاقه مندی ها',
                             'wish_list': 'لیست ویش ها',
                             'temp_card': 'سبد خرید موقت',
@@ -304,11 +301,11 @@ class Docs(APIView):
                                 'last_name': 'نام خانوادگی',
                                 'landline': 'شماره ثابت',
                                 'birthday': 'تاریخ تولد',
-                                'province': 'استان',
-                                'city': 'شهر',
-                                'zip_code': 'کد پستی',
+                                'national_code': 'کد ملی',
+                                'card_number': 'شماره کارت',
+                                'isbn': 'شماره شبا',
                                 'wallet_balance': 'اعتبار حساب',
-                                'address': 'آدرس',
+                                'location_details': 'مشخصات مکانی',
                                 'like_list': 'علاقه مندی ها',
                                 'wish_list': 'ویش ها',
                                 'temp_card': 'سبد خرید موقت',
@@ -446,9 +443,12 @@ class Docs(APIView):
                                     'exchange_percentage': 'درصد کمیسیون',
                                     'unique_code': 'کد یکتا',
                                 },
+                                'numbers': 'تعداد',
                                 'weight': 'وزن - گرم',
+                                'weight_numbers': 'وزن مجموع',
                                 'description': 'توضیحات',
                                 'product_price': 'قیمت محصول - به واحد ارز',
+                                'product_price_numbers': 'قیمت مجموع',
                                 'batobox_shipping_price': 'هزینه حمل و نقل باتوباکس - به واحد ارز',
                                 'final_price': 'قیمت نهایی - به واحد ارز',
                                 'currency_equivalent_price_in_toman': 'قیمت واحد ارز به تومان',
@@ -477,7 +477,12 @@ class Docs(APIView):
                             '15': 'محصول آمازون یافت نشد. ارسال نماد ارز برای محاسبه قیمت ضروری است',
                             '16': 'محصول آمازون یافت نشد. ارسال وزن برای محاسبه قیمت ضروری است',
                             '17': 'محصول آمازون یافت نشد. ارسال قیمت برای محاسبه قیمت نهایی ضروری است',
-                            '18': 'not allowed متد غیر مجاز',
+                            '18': 'کمیسیون ارسالی متناسب با قیمت ضربدر تعداد محصول نبوده و قابل پذیرش نمی باشد',
+                            '19': 'کمیسیون متناسب با قیمت ضربدر تعداد محصول درخواستی یافت نشد',
+                            '20': 'نماد ارز ارسالی با نماد ارز محصول یکی نیست',
+                            '21': 'هزینه حمل ارسالی متناسب با وزن ضربدر تعداد محصول نبوده و قابل پذیرش نمی باشد',
+                            '22': 'هزینه حمل و نقل متناسب با وزن ضربدر تعداد محصول درخواستی یافت نشد',
+                            '23': 'not allowed متد غیر مجاز',
                         }
                     },
                     'PUT': {
@@ -942,7 +947,12 @@ class Docs(APIView):
                         'سبک داده مورد پذیرش': 'جیسون json',
                         'داده های ارسالی': {
                             'pay_type': 'wallet or direct',
-                            'requested_products_id_list': 'لیست آیدی های محصولات درخواستی'
+                            'requested_products_id_list': 'لیست آیدی های محصولات درخواستی',
+                            'receiver_province': 'استان گیرنده',
+                            'receiver_city': 'شهر گیرنده',
+                            'receiver_zip_code': 'کد پستی گیرنده',
+                            'receiver_address': 'آدرس گیرنده',
+                            'receiver_mobile_phone_number': 'شماره تماس همراه گیرنده',
                         },
                         'داده بازگشتی در صورت موفقیت': {
                             'method': 'post',
@@ -1001,6 +1011,19 @@ class Docs(APIView):
                                     '3': '...',
                                 },
                                 'order_status': 'وضعیت سفارش',
+                                'description': 'توضیحات',
+                                'first_name': 'نام',
+                                'last_name': 'نام خانوادگی',
+                                'national_code': 'کد ملی',
+                                'mobile_phone_number': 'شماره موبایل',
+                                'landline': 'شماره تماس ثابت',
+                                'card_number': 'شماره کارت',
+                                'isbn': 'شماره شبا',
+                                'receiver_province': 'استان دریافت کننده',
+                                'receiver_city': 'شهر دریافت کننده',
+                                'receiver_zip_code': 'کد پستی دریافت کننده',
+                                'receiver_address': 'آدرس دریافت کننده',
+                                'receiver_mobile_phone_number': 'شماره موبایل دریافت کننده',
                                 'created_at': 'زمان ثبت سفارش',
                                 'updated_at': 'زمان بروزرسانی سفارش',
                                 'created_by': 'ایجاد شده توسط',
@@ -1009,6 +1032,21 @@ class Docs(APIView):
                             'transaction_detail': {
                                 'transaction_id': 'آیدی صورت حساب قابل پرداخت',
                                 'payment_unique_code': 'کد یکتای پرداخت',
+                                'transaction_detail': {
+                                    '0': {
+                                        'id': 'آیدی صورت حساب',
+                                        'order_id': 'آیدی سفارش',
+                                        'amount': 'مبلغ به تومان',
+                                        'description': 'توضیحات',
+                                        'email': 'ایمیل',
+                                        'mobile': 'موبایل',
+                                        'authority': 'شناسه پرداخت',
+                                        'ref_id': 'شماره سفارش',
+                                        'status': 'وضعیت پرداخت',
+                                        'created_at': 'زمان ایجاد',
+                                        'updated_at': 'زمان بروزرسانی',
+                                    },
+                                }
                             }
                         },
                         'لیست خطا های احتمالی': {
@@ -1920,7 +1958,7 @@ class Docs(APIView):
                         'توضیحات': 'متد غیر مجاز',
                     },
                 },
-                'ticket/api/new-ticket/': {
+                'ticket/api/ticket/': {
                     'درخواست': 'ساخت تیکت',
                     'GET': {
                         'توضیحات': 'متد غیر مجاز',
@@ -1942,28 +1980,13 @@ class Docs(APIView):
                                 '0': {
                                     'status': 'وضعیت',
                                     'title': 'عنوان',
+                                    'has_seen_by_user': 'true or false وضعیت دیده شدن',
+                                    'belong_to': 'متعلق به',
                                     'created_at': 'زمان ایجاد',
                                     'updated_at': 'زمان بروز رسانی',
                                     'created_by': 'ساخته شده توسط',
                                     'updated_by': 'بروز شده توسط',
                                 },
-                                '1': {
-                                    'status': 'وضعیت',
-                                    'title': 'عنوان',
-                                    'created_at': 'زمان ایجاد',
-                                    'updated_at': 'زمان بروز رسانی',
-                                    'created_by': 'ساخته شده توسط',
-                                    'updated_by': 'بروز شده توسط',
-                                },
-                                '2': {
-                                    'status': 'وضعیت',
-                                    'title': 'عنوان',
-                                    'created_at': 'زمان ایجاد',
-                                    'updated_at': 'زمان بروز رسانی',
-                                    'created_by': 'ساخته شده توسط',
-                                    'updated_by': 'بروز شده توسط',
-                                },
-                                '3': '...',
                             }
                         },
                         'لیست خطا های احتمالی': {
@@ -1973,7 +1996,39 @@ class Docs(APIView):
                         }
                     },
                     'PUT': {
-                        'توضیحات': 'متد غیر مجاز',
+                        'توضیحات': 'از طریق این متد امکان ساخت تیکت فراهم شده است',
+                        'HTTP HEADER': {
+                            'Authorization': 'BatoboxToken xxx',
+                        },
+                        'سبک داده مورد پذیرش': 'جیسون json',
+                        'داده های ارسالی': {
+                            'ticket_id': 'ایدی تیکت',
+                            'has_seen_by_user': 'true or false',
+                        },
+                        'داده بازگشتی در صورت موفقیت': {
+                            'method': 'post',
+                            'request': 'ویرایش تیکت',
+                            'result': 'موفق',
+                            'data': {
+                                '0': {
+                                    'status': 'وضعیت',
+                                    'title': 'عنوان',
+                                    'has_seen_by_user': 'true or false وضعیت دیده شدن',
+                                    'belong_to': 'متعلق به',
+                                    'created_at': 'زمان ایجاد',
+                                    'updated_at': 'زمان بروز رسانی',
+                                    'created_by': 'ساخته شده توسط',
+                                    'updated_by': 'بروز شده توسط',
+                                },
+                            }
+                        },
+                        'لیست خطا های احتمالی': {
+                            '1': 'ورودی صحیح نیست',
+                            '2': 'داده ورودی کامل ارسال نشده است',
+                            '3': 'مقدار ticket_id ارسال نشده است',
+                            '4': 'مقدار has_seen_by_user ارسال نشده است',
+                            '5': 'تیکت با ایدی ticket_id  یافت نشد یا متعلق به کاربر فعلی نیست'
+                        }
                     },
                     'DELETE': {
                         'توضیحات': 'متد غیر مجاز',
@@ -2072,6 +2127,8 @@ class Docs(APIView):
                                 '0': {
                                     'status': 'وضعیت',
                                     'title': 'عنوان',
+                                    'has_seen_by_user': 'true or false وضعیت دیده شدن',
+                                    'belong_to': 'متعلق به',
                                     'created_at': 'زمان ایجاد',
                                     'updated_at': 'زمان بروز رسانی',
                                     'created_by': 'ساخته شده توسط',
@@ -2080,6 +2137,8 @@ class Docs(APIView):
                                 '1': {
                                     'status': 'وضعیت',
                                     'title': 'عنوان',
+                                    'has_seen_by_user': 'true or false وضعیت دیده شدن',
+                                    'belong_to': 'متعلق به',
                                     'created_at': 'زمان ایجاد',
                                     'updated_at': 'زمان بروز رسانی',
                                     'created_by': 'ساخته شده توسط',
@@ -2088,6 +2147,8 @@ class Docs(APIView):
                                 '2': {
                                     'status': 'وضعیت',
                                     'title': 'عنوان',
+                                    'has_seen_by_user': 'true or false وضعیت دیده شدن',
+                                    'belong_to': 'متعلق به',
                                     'created_at': 'زمان ایجاد',
                                     'updated_at': 'زمان بروز رسانی',
                                     'created_by': 'ساخته شده توسط',

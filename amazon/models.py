@@ -17,7 +17,6 @@ class Category(models.Model):
     parent = models.ForeignKey('self', related_name='parent_category', on_delete=models.SET_NULL, null=True, blank=True,
                                verbose_name='دسته مادر')
     parent_tree = models.TextField(null=True, blank=True, editable=False, verbose_name='درخت رابطه')
-    children = models.ManyToManyField('self', blank=True, editable=False, verbose_name='زیرمجموعه ها')
     title_fa = models.CharField(max_length=255, null=False, blank=False, verbose_name='عنوان فارسی')
     title_en = models.CharField(max_length=255, null=False, blank=False, verbose_name='عنوان انگلیسی')
     title_slug = models.SlugField(max_length=255, null=True, blank=True, allow_unicode=True, editable=False,
@@ -25,7 +24,7 @@ class Category(models.Model):
     cat_image = models.ImageField(upload_to='categories/', null=True, blank=True, verbose_name='تصویر دسته')
 
     def __str__(self):
-        return self.title_en
+        return self.title_fa
 
     def save(self, *args, **kwargs):
         self.title_slug = slugify(self.title_en, allow_unicode=True)
@@ -43,7 +42,7 @@ class Keyword(models.Model):
                                   verbose_name='اسلاگ عنوان')
 
     def __str__(self):
-        return self.title_en
+        return self.title_fa
 
     class Meta:
         verbose_name = 'کلمه برجسته'
@@ -131,6 +130,21 @@ class AmazonProduct(models.Model):
         super().save(*args, **kwargs)
 
 
+class AddAmazonProduct(models.Model):
+    asin = models.CharField(max_length=255, null=True, blank=True, verbose_name='asin')
+    link = models.CharField(max_length=1000, null=False, blank=False, verbose_name='link')
+    created_at = jmodel.jDateTimeField(auto_now_add=True, verbose_name='تاریخ ایجاد')
+
+    def __str__(self):
+        return self.link[:50]
+
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = 'افزودن محصول آمازون'
+        verbose_name_plural = 'افزودن محصولات آمازون'
+
+
 auditlog.register(AmazonProduct)
+auditlog.register(AddAmazonProduct)
 auditlog.register(Keyword)
 auditlog.register(Category)

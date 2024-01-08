@@ -12,6 +12,7 @@ class TicketSerializer(serializers.ModelSerializer):
 
     def to_representation(self, instance):
         ret = super().to_representation(instance)
+        ret['belong_to'] = instance.belong_to.username
         ret['created_by'] = instance.created_by.username
         ret['updated_by'] = instance.updated_by.username
         return ret

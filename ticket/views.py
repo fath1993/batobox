@@ -13,7 +13,7 @@ from utilities.http_metod import fetch_data_from_http_post, fetch_files_from_htt
 from utilities.utilities import create_json
 
 
-class TicketNewView(APIView):
+class TicketView(APIView):
     authentication_classes = (TokenAuthentication,)
     permission_classes = (IsAuthenticated,)
 
@@ -34,14 +34,20 @@ class TicketNewView(APIView):
                 new_ticket = Ticket.objects.create(
                     status='ساخته شده',
                     title=ticket_title,
+                    belong_to=request.user,
                     created_by=request.user,
                     updated_by=request.user,
                 )
+                ticket = Ticket.objects.filter(id=new_ticket.id, belong_to=request.user)
+                if ticket.count() == 0:
+                    return JsonResponse(
+                        create_json('post', 'ساخت تیکت', 'ناموفق', f'تیکت با ایدی {new_ticket.id} یافت نشد'))
+                serializer = TicketSerializer(ticket, many=True)
                 json_response_body = {
                     'method': 'post',
                     'request': 'ساخت تیکت',
                     'result': 'موفق',
-                    'ticket_id': new_ticket.id,
+                    'data': serializer.data,
                 }
                 return JsonResponse(json_response_body)
             except Exception as e:
@@ -53,7 +59,48 @@ class TicketNewView(APIView):
             return JsonResponse(create_json('post', 'ساخت تیکت', 'ناموفق', f'ورودی صحیح نیست.'))
 
     def put(self, request, *args, **kwargs):
-        return JsonResponse({'message': 'not allowed'})
+        try:
+            front_input = json.loads(request.body)
+            try:
+                try:
+                    ticket_id = front_input['ticket_id']
+                except:
+                    return JsonResponse(
+                        create_json('post', 'ویرایش تیکت', 'ناموفق', f'مقدار ticket_id ارسال نشده است'))
+                try:
+                    has_seen_by_user = front_input['has_seen_by_user']
+                    has_seen_by_user = str(has_seen_by_user).lower()
+                    if has_seen_by_user == 'false':
+                        has_seen_by_user = False
+                    else:
+                        has_seen_by_user = True
+                except:
+                    return JsonResponse(
+                        create_json('post', 'ویرایش تیکت', 'ناموفق', f'مقدار has_seen_by_user ارسال نشده است'))
+                try:
+                    ticket = Ticket.objects.get(id=ticket_id, belong_to=request.user)
+                    ticket.has_seen_by_user = has_seen_by_user
+                    ticket.save()
+                except:
+                    return JsonResponse(create_json('post', 'ویرایش تیکت', 'ناموفق', f'تیکت با ایدی {ticket_id} یافت نشد یا متعلق به کاربر فعلی نیست'))
+                ticket = Ticket.objects.filter(id=ticket_id)
+                if ticket.count() == 0:
+                    return JsonResponse(create_json('post', 'ویرایش تیکت', 'ناموفق', f'تیکت با ایدی {ticket_id} یافت نشد'))
+                serializer = TicketSerializer(ticket, many=True)
+                json_response_body = {
+                    'method': 'post',
+                    'request': 'ویرایش تیکت',
+                    'result': 'موفق',
+                    'data': serializer.data,
+                }
+                return JsonResponse(json_response_body)
+            except Exception as e:
+                print(str(e))
+                return JsonResponse(
+                    create_json('post', 'ویرایش تیکت', 'ناموفق', f'داده ورودی کامل ارسال نشده است'))
+        except Exception as e:
+            print(str(e))
+            return JsonResponse(create_json('post', 'ویرایش تیکت', 'ناموفق', f'ورودی صحیح نیست.'))
 
     def delete(self, request, *args, **kwargs):
         return JsonResponse({'message': 'not allowed'})
@@ -128,7 +175,7 @@ class TicketListView(APIView):
         return JsonResponse({'message': 'not allowed'})
 
     def post(self, request, *args, **kwargs):
-        tickets = Ticket.objects.filter(created_by=request.user)
+        tickets = Ticket.objects.filter(belong_to=request.user)
         if tickets.count() == 0:
             return JsonResponse(create_json('post', 'لیست تیکت', 'ناموفق', f'لیست تیکت یافت نشد'))
         serializer = TicketSerializer(tickets, many=True)

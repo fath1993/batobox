@@ -6,22 +6,22 @@ from django.contrib import admin
 from django.core.exceptions import ValidationError
 from django.http import HttpResponse
 
-from amazon.models import AmazonProduct, Category, Keyword
+from amazon.models import AmazonProduct, Category, Keyword, AddAmazonProduct
 from amazon.views import AmazonUpdateProductDetail
+from custom_logs.models import custom_log
 
 
 @admin.register(Category)
 class CategoryAdmin(admin.ModelAdmin):
     list_display = (
-        'parent',
         'title_fa',
         'title_en',
+        'parent',
     )
 
     readonly_fields = (
         'title_slug',
         'parent_tree',
-        'children',
     )
 
     fields = (
@@ -31,7 +31,6 @@ class CategoryAdmin(admin.ModelAdmin):
         'title_slug',
         'cat_image',
 
-        'children',
         'parent_tree',
     )
 
@@ -49,14 +48,9 @@ class AutoUpdateAllParentTree(threading.Thread):
 
     def run(self):
         for category in self.queryset:
-            category.children.clear()
-            category.save()
-        for category in self.queryset:
             parent_tree_list = []
             parent = category.parent
             if parent:
-                parent.children.add(category)
-                parent.save()
                 if not parent.title_slug:
                     custom_title_slug = 'slug: null'
                 else:
@@ -129,6 +123,7 @@ class AmazonProductAdmin(admin.ModelAdmin):
 
     search_fields = (
         'asin',
+        'created_by__username',
     )
 
     fields = (
@@ -195,48 +190,53 @@ class AmazonProductAdmin(admin.ModelAdmin):
         instance.save()
         form.save_m2m()
         return instance
-    #     if not change:
-    #         amazon_asin = None
-    #         if not instance.asin:
-    #             if instance.product_root_url:
-    #                 if str(instance.product_root_url).find('https://www.amazon.ae/') != -1:
-    #                     product_link = instance.product_root_url.split('/')
-    #                     for section in product_link:
-    #                         if len(section) == 10:
-    #                             amazon_asin = section
-    #             if not instance.product_root_url and instance.product_main_url:
-    #                 if str(instance.product_main_url).find('https://www.amazon.ae/') != -1:
-    #                     product_link = instance.product_main_url.split('/')
-    #                     for section in product_link:
-    #                         if len(section) == 10:
-    #                             amazon_asin = section
-    #         if amazon_asin:
-    #             try:
-    #                 old_amazon_product = AmazonProduct.objects.get(asin=amazon_asin)
-    #                 self.message_user(request, f"محصول با asin {amazon_asin} از قبل موجود است", level='ERROR')
-    #                 form._save_related_allowed = False
-    #                 request.session['save_related_allowed'] = {'save_related_allowed': False}
-    #                 return
-    #             except:
-    #                 instance.asin = amazon_asin
-    #                 instance.save()
-    #                 form.save_m2m()
-    #                 request.session['save_related_allowed'] = {'save_related_allowed': True}
-    #                 return instance
-    #     else:
-    #         instance.save()
-    #         form.save_m2m()
-    #         request.session['save_related_allowed'] = {'save_related_allowed': True}
-    #         return instance
-    #
-    # def save_related(self, request, form, formsets, change):
-    #     save_model_data = request.session.pop('save_related_allowed')
-    #     if save_model_data['save_related_allowed']:
-    #         super().save_related(request, form, formsets, change)
-
 
     @admin.action(description='دریافت اطلاعات جدید از rainforest api')
     def get_new_data_from_amazon_product_api(self, request, queryset):
         messages.info(request, f'عملیات در حال اجرا. زمان تقریبی تکمیل {queryset.count() * 10} ثانیه. تکمیل دریافت تصاویر در حدود {queryset.count()} دقیقه')
         AmazonUpdateProductDetail(request=request, amazon_products=queryset).start()
     actions = ('get_new_data_from_amazon_product_api', )
+
+
+@admin.register(AddAmazonProduct)
+class AddAmazonProductAdmin(admin.ModelAdmin):
+    list_display = (
+        'pk',
+        'link',
+        'created_at',
+    )
+
+    readonly_fields = (
+        'created_at',
+    )
+
+    fields = (
+        'asin',
+        'link',
+        'created_at',
+    )
+
+    @admin.action(description='ایجاد یا بروز رسانی محصولات')
+    def get_or_create_product(self, request, queryset):
+        amazon_product_list = []
+        for product in queryset:
+            amazon_asin = None
+            if not product.asin:
+                if str(product.link).find('https://www.amazon.ae/') != -1:
+                    if str(product.link).find('/dp/') != -1:
+                        start_index = str(product.link).find('/dp/') + 4
+                        end_index = start_index + 10
+                        amazon_asin = str(product.link)[start_index:end_index]
+            else:
+                amazon_asin = product.asin
+            if amazon_asin:
+                amazon_product = AmazonProduct.objects.get_or_create(asin=amazon_asin, created_by=request.user, updated_by=request.user)
+                amazon_product_list.append(amazon_product[0])
+            custom_log(f'amazon_asin: {amazon_asin}')
+        for product in queryset:
+            product.delete()
+        messages.info(request,
+                      f'عملیات در حال اجرا. زمان تقریبی تکمیل {len(amazon_product_list) * 10} ثانیه. تکمیل دریافت تصاویر در حدود {queryset.count()} دقیقه')
+        AmazonUpdateProductDetail(request=request, amazon_products=amazon_product_list).start()
+
+    actions = (get_or_create_product,)

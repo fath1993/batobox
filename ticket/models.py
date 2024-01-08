@@ -12,10 +12,13 @@ class Ticket(models.Model):
     status = models.CharField(max_length=255, choices=TICKET_STATUS, default='pending', null=False, blank=False,
                               verbose_name='وضعیت تیکت')
     title = models.CharField(max_length=512, null=True, blank=True, verbose_name='عنوان تیکت')
+    has_seen_by_user = models.BooleanField(default=False, verbose_name='دیده شده توسط کاربر')
     created_at = jmodel.jDateTimeField(auto_now_add=True, verbose_name='تاریخ ایجاد')
     updated_at = jmodel.jDateTimeField(auto_now=True, verbose_name='تاریخ بروز رسانی')
-    created_by = models.ForeignKey(User, related_name='ticket_created_by', on_delete=models.CASCADE, null=False,
+    belong_to = models.ForeignKey(User, related_name='ticket_belong_to', on_delete=models.CASCADE, null=False,
                                    blank=False, editable=True, verbose_name='متعلق به')
+    created_by = models.ForeignKey(User, related_name='ticket_created_by', on_delete=models.CASCADE, null=False,
+                                   blank=False, editable=False, verbose_name='ساخته شده توسط')
     updated_by = models.ForeignKey(User, related_name='ticket_updated_by', on_delete=models.CASCADE, null=False,
                                    blank=False, editable=False, verbose_name='بروز شده توسط')
 
@@ -51,5 +54,6 @@ class Message(models.Model):
             self.ticket.status = 'پاسخ ادمین'
         else:
             self.ticket.status = 'پاسخ کاربر'
+            self.ticket.has_seen_by_user = False
         self.ticket.save()
         super().save(*args, **kwargs)

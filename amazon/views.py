@@ -207,6 +207,8 @@ def update_amazon_product_from_rainforest_api(amazon_product):
                 amazon_product.size_guide_html = str(product_size_guide_html)
         except Exception as e:
             pass
+        if not amazon_product.weight:
+            amazon_product.weight = 0
         try:
             unit = None
             try:
@@ -289,25 +291,26 @@ def update_amazon_product_from_rainforest_api(amazon_product):
         except Exception as e:
             pass
         discounted_price = 0
+        amazon_product.discounted_price = 0
         try:
             product_buybox_winner_price_value = product_api_data['product']['buybox_winner']['price']['value']
             if str(product_buybox_winner_price_value) != '':
                 discounted_price = product_buybox_winner_price_value
-                amazon_product.discounted_price = float(discounted_price)
+
         except Exception as e:
             pass
         base_price = 0
+        amazon_product.base_price = 0
         try:
             product_buybox_winner_rrp_value = product_api_data['product']['buybox_winner']['rrp']['value']
             if str(product_buybox_winner_rrp_value) != '':
                 base_price = product_buybox_winner_rrp_value
-                amazon_product.base_price = float(base_price)
+
         except Exception as e:
             pass
-        if discounted_price != 0 and base_price == 0:
-            base_price = discounted_price
-            discounted_price = 0
+
         shipping_price = 0
+        amazon_product.shipping_price = 0
         try:
             product_buybox_winner_shipping = product_api_data['product']['buybox_winner']['shipping']
             try:
@@ -324,21 +327,22 @@ def update_amazon_product_from_rainforest_api(amazon_product):
                 pass
         except Exception as e:
             pass
-        if discounted_price != 0:
-            total_price = discounted_price + shipping_price
-        elif base_price != 0 and discounted_price == 0:
-            total_price = base_price + shipping_price
+
+        if discounted_price != 0 and base_price != 0:
+            amazon_product.discounted_price = float(discounted_price)
+            amazon_product.base_price = float(base_price)
+            amazon_product.total_price = float(discounted_price) + shipping_price
+        elif discounted_price == 0 and base_price != 0:
             amazon_product.discounted_price = 0
-        else:
-            total_price = 0
-        if total_price != 0:
-            amazon_product.total_price = total_price
-            if shipping_price == 0:
-                amazon_product.shipping_price = 0
+            amazon_product.base_price = float(base_price)
+            amazon_product.total_price = float(base_price) + shipping_price
+        elif discounted_price != 0 and base_price == 0:
+            amazon_product.base_price = float(discounted_price)
+            amazon_product.discounted_price = 0
+            amazon_product.total_price = float(discounted_price) + shipping_price
         else:
             amazon_product.base_price = 0
             amazon_product.discounted_price = 0
-            amazon_product.shipping_price = 0
             amazon_product.total_price = 0
         amazon_product.save()
         # DownloadFilesThread(amazon_product, files_list).start()
@@ -394,6 +398,7 @@ def update_amazon_product_from_rainforest_api(amazon_product):
         amazon_product.downloaded_documents = True
         amazon_product.downloaded_images = True
         amazon_product.save()
+        return amazon_product
     except Exception as e:
         custom_log(f'the error occurs when trying to get data from rainforest. err: {str(e)}')
         return False
