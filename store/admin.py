@@ -72,9 +72,14 @@ class BatoboxCurrencyExchangeCommissionAdmin(admin.ModelAdmin):
 @admin.register(RequestedProduct)
 class ProductAdmin(admin.ModelAdmin):
     list_display = (
+        'object_id_display',
         'link',
         'description',
         'final_price',
+    )
+
+    search_fields = (
+        'pk',
     )
 
     readonly_fields = (
@@ -99,6 +104,11 @@ class ProductAdmin(admin.ModelAdmin):
         'created_at',
         'created_by',
     )
+
+    @admin.display(description="شماره محصول", empty_value='???')
+    def object_id_display(self, obj):
+        display_id = obj.id
+        return display_id
 
     def save_model(self, request, instance, form, change):
         instance = form.save(commit=False)

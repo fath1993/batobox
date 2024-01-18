@@ -17,8 +17,11 @@ class ProfileAdmin(admin.ModelAdmin):
         'user',
         'first_name',
         'last_name',
+        'national_code',
         'landline',
         'birthday',
+        'card_number',
+        'isbn',
         'wallet_balance',
         'location_details',
         'like_list',
@@ -49,6 +52,7 @@ class PaymentCodeAdmin(admin.ModelAdmin):
 class OrderAdmin(admin.ModelAdmin):
     list_display = (
         'display_id_display',
+        'requested_product_id_display',
         'order_status',
         'description',
         'created_at_display',
@@ -62,6 +66,14 @@ class OrderAdmin(admin.ModelAdmin):
         'updated_by',
     )
 
+    list_filter = (
+        'order_status',
+    )
+
+    search_fields = (
+        'pk',
+    )
+
     fields = (
         'products',
         'order_status',
@@ -69,6 +81,7 @@ class OrderAdmin(admin.ModelAdmin):
         'first_name',
         'last_name',
         'national_code',
+        'email',
         'mobile_phone_number',
         'landline',
         'card_number',
@@ -88,6 +101,17 @@ class OrderAdmin(admin.ModelAdmin):
     def display_id_display(self, obj):
         display_id = obj.id
         return display_id
+
+    @admin.display(description="شماره محصولات درخواستی", empty_value='???')
+    def requested_product_id_display(self, obj):
+        requested_products = obj.products.all()
+        requested_product_id_list = ''
+        for requested_product in requested_products:
+            if requested_product_id_list == '':
+                requested_product_id_list += f'{requested_product.id}'
+            else:
+                requested_product_id_list += f', {requested_product.id}'
+        return requested_product_id_list
 
     @admin.display(description="تاریخ ایجاد", empty_value='???')
     def created_at_display(self, obj):

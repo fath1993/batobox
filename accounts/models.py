@@ -8,9 +8,11 @@ from django_jalali.db import models as jmodel
 
 from store.models import RequestedProduct
 
-ORDER_STATUS = (('در حال بررسی', 'در حال بررسی'), ('پرداخت شده و در انتظار بررسی', 'پرداخت شده و در انتظار بررسی'), ('در انتظار پرداخت مبلغ اصلاحیه', 'در انتظار پرداخت مبلغ اصلاحیه'),
-                ('درحال آماده سازی', 'درحال آماده سازی'), ('ارسال شده', 'ارسال شده'),
-                ('لغو شده', 'لغو شده'), ('ارسال به ایران', 'ارسال به ایران'), ('در گمرک', 'در گمرک'), ('در انبار باتوباکس', 'در انبار باتوباکس'), ('تکمیل شده', 'تکمیل شده'))
+ORDER_STATUS = (('در حال بررسی', 'در حال بررسی'), ('پرداخت شده و در انتظار بررسی', 'پرداخت شده و در انتظار بررسی'),
+                ('در انتظار پرداخت مبلغ اصلاحیه', 'در انتظار پرداخت مبلغ اصلاحیه'), ('دریافت سفارش', 'دریافت سفارش'),
+                ('ثبت سفارش در سایت خارجی', 'ثبت سفارش در سایت خارجی'), ('در واحد خارج از کشور', 'در واحد خارج از کشور'),
+                ('ارسال به ایران', 'ارسال به ایران'), ('در گمرک', 'در گمرک'), ('در انبار باتوباکس', 'در انبار باتوباکس'),
+                ('ارسال شده', 'ارسال شده'), ('تکمیل شده', 'تکمیل شده'), ('لغو شده', 'لغو شده'))
 
 TRANSACTION_STATUS = (('پرداخت نشده', 'پرداخت نشده'), ('پرداخت شده', 'پرداخت شده'))
 
@@ -84,6 +86,7 @@ class Order(models.Model):
     first_name = models.CharField(max_length=255, null=True, blank=True, verbose_name='نام')
     last_name = models.CharField(max_length=255, null=True, blank=True, verbose_name='نام خانوادگی')
     national_code = models.CharField(max_length=255, null=True, blank=True, verbose_name='کد ملی')
+    email = models.CharField(max_length=255, null=True, blank=True, verbose_name='ایمیل')
     mobile_phone_number = models.CharField(max_length=255, null=True, blank=True, verbose_name='شماره تماس همراه')
     landline = models.CharField(max_length=255, null=True, blank=True, verbose_name='شماره تماس ثابت')
     card_number = models.CharField(max_length=255, null=True, blank=True, verbose_name='شماره کارت')
@@ -92,13 +95,13 @@ class Order(models.Model):
     receiver_province = models.CharField(max_length=255, null=True, blank=True, verbose_name='استان گیرنده')
     receiver_city = models.CharField(max_length=255, null=True, blank=True, verbose_name='شهر گیرنده')
     receiver_zip_code = models.CharField(max_length=255, null=True, blank=True, verbose_name='کد پستی گیرنده')
-    receiver_address = models.CharField(max_length=255, null=True, blank=True, verbose_name='آدرس گیرنده')
+    receiver_address = models.TextField(null=True, blank=True, verbose_name='آدرس گیرنده')
     receiver_mobile_phone_number = models.CharField(max_length=255, null=True, blank=True, verbose_name='شماره تماس همراه گیرنده')
 
     created_at = jmodel.jDateTimeField(auto_now_add=True, verbose_name='تاریخ ایجاد')
     updated_at = jmodel.jDateTimeField(auto_now=True, verbose_name='تاریخ بروز رسانی')
-    created_by = models.ForeignKey(User, on_delete=models.CASCADE, null=False, blank=False, related_name='order_user_created_by', editable=False, verbose_name='کاربر')
-    updated_by = models.ForeignKey(User, on_delete=models.CASCADE, null=False, blank=False, related_name='order_user_updated_by', editable=False, verbose_name='کاربر')
+    created_by = models.ForeignKey(User, on_delete=models.CASCADE, null=False, blank=False, related_name='order_user_created_by', editable=False, verbose_name='ساخته شده توسط')
+    updated_by = models.ForeignKey(User, on_delete=models.CASCADE, null=False, blank=False, related_name='order_user_updated_by', editable=False, verbose_name='بروز شده توسط')
 
     def __str__(self):
         return f'{self.id}'

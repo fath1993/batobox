@@ -10,6 +10,8 @@ import requests
 import json
 
 from django.http import JsonResponse
+
+from amazon.models import Category
 from custom_logs.models import custom_log
 from storage.models import Storage
 from store.models import RainForestApiAccessHistory
@@ -398,6 +400,13 @@ def update_amazon_product_from_rainforest_api(amazon_product):
         amazon_product.downloaded_documents = True
         amazon_product.downloaded_images = True
         amazon_product.save()
+        if amazon_product.categories.all().count() == 0:
+            default_category = Category.objects.get_or_create(
+                title_fa='بدون دسته',
+                title_en='uncategorized',
+            )
+            amazon_product.categories.add(default_category[0])
+            amazon_product.save()
         return amazon_product
     except Exception as e:
         custom_log(f'the error occurs when trying to get data from rainforest. err: {str(e)}')

@@ -468,6 +468,12 @@ class ProductListView(APIView):
                                                 f'در حال حاضر تنها محصولات آمازون بتوباکس پشتیبانی می شود'))
             try:
                 try:
+                    ordering = front_input['ordering']
+                    if ordering == '':
+                        raise
+                except:
+                    ordering = None
+                try:
                     date_range_from = front_input['date_range_from']
                     if date_range_from == '':
                         raise
@@ -522,15 +528,15 @@ class ProductListView(APIView):
                 except:
                     score_range_to = None
                 try:
-                    category_words_list = front_input['category_words_list']
-                    if category_words_list == '':
+                    category_id_list = front_input['category_id_list']
+                    if category_id_list == '':
                         raise
                     try:
-                        category_words_list = str(category_words_list).split(',')
+                        category_id_list = str(category_id_list).split(',')
                     except:
-                        category_words_list = None
+                        category_id_list = None
                 except:
-                    category_words_list = None
+                    category_id_list = None
                 try:
                     keyword_words_list = front_input['keyword_words_list']
                     if keyword_words_list == '':
@@ -580,16 +586,6 @@ class ProductListView(APIView):
                     searched_word = str(searched_word)
                 except:
                     searched_word = None
-                # print(f'date_range_from: {date_range_from}')
-                # print(f'date_range_to: {date_range_to}')
-                # print(f'price_range_from: {price_range_from}')
-                # print(f'price_range_to: {price_range_to}')
-                # print(f'score_range_from: {score_range_from}')
-                # print(f'score_range_to: {score_range_to}')
-                # print(f'brand: {brand}')
-                # print(f'is_available: {is_available}')
-                # print(f'is_special: {is_special}')
-                # print(f'searched_word: {searched_word}')
                 q = Q()
                 if date_range_from and date_range_to:
                     q &= Q(**{f'created_at__range': [date_range_from, date_range_to]})
@@ -599,12 +595,33 @@ class ProductListView(APIView):
                 if score_range_from and score_range_to:
                     q &= Q(**{f'rating_score__gte': score_range_from})
                     q &= Q(**{f'rating_score__lte': score_range_to})
-                if category_words_list:
-                    q &= Q(**{f'categories__title_fa__in': category_words_list})
+                if category_id_list:
+                    cat_trees = []
+                    categories = Category.objects.all()
+                    for cat in categories:
+                        id_list = [cat.id]
+                        for x in json.loads(cat.parent_tree):
+                            if x != 'مادر است':
+                                id_list.append(x[0])
+                        id_list.append(cat.id)
+                        cat_trees.append(id_list)
+                    print(cat_trees)
+                    all_cat_id_list = []
+                    for category_id in category_id_list:
+                        for cat_tree in cat_trees:
+                            if int(category_id) in cat_tree:
+                                all_cat_id_list.append(cat_tree[-1])
+                    print(all_cat_id_list)
+                    q &= Q(**{f'categories__id__in': all_cat_id_list})
                 if keyword_words_list:
-                    q &= Q(**{f'keywords__title_fa__in': keyword_words_list})
+                    for keyword_word in keyword_words_list:
+                        q &= (
+                                Q(**{f'keywords__title_fa__icontains': keyword_word}) |
+                                Q(**{f'keywords__title_en__icontains': keyword_word}) |
+                                Q(**{f'keywords__title_slug__icontains': keyword_word})
+                        )
                 if brand:
-                    q &= Q(**{f'brand': brand})
+                    q &= Q(**{f'brand__icontains': brand})
                 if is_available is not None:
                     q &= Q(**{f'is_product_available': is_available})
                 if is_special is not None:
@@ -619,18 +636,37 @@ class ProductListView(APIView):
                             Q(**{f'attributes__icontains': searched_word}) |
                             Q(**{f'specifications__icontains': searched_word})
                     )
-                amazon_products = AmazonProduct.objects.filter(q)
-                try:
-                    page = request.GET['page']
-                    paginator = PageNumberPagination()
-                    paginator.page_size = 40
-                    result_page = paginator.paginate_queryset(amazon_products, request)
-                    serializer = AmazonProductSerializer(result_page, many=True)
-                    return paginator.get_paginated_response(serializer.data)
-                except:
-                    serializer = AmazonProductSerializer(amazon_products[:40], many=True)
-                    return Response(serializer.data)
+                if ordering:
+                    if ordering == 'date':
+                        amazon_products = AmazonProduct.objects.filter(q).order_by('-created_at')
+                    elif ordering == 'price':
+                        amazon_products = AmazonProduct.objects.filter(q).order_by('total_price')
+                    else:
+                        amazon_products = AmazonProduct.objects.filter(q)
+                else:
+                    amazon_products = AmazonProduct.objects.filter(q)
+                print(amazon_products)
+                paginator = PageNumberPagination()
+                paginator.page_size = 40
 
+
+                result_page = paginator.paginate_queryset(amazon_products, request)
+
+
+                serializer = AmazonProductSerializer(result_page, many=True)
+                paginated_response = paginator.get_paginated_response(serializer.data)
+                total_pages = paginator.page.paginator.num_pages
+                current_page = paginator.page.number
+                paginated_response.data['total_products'] = amazon_products.count()
+                paginated_response.data['total_pages'] = total_pages
+                paginated_response.data['current_page'] = current_page
+                json_response_body = {
+                    'method': 'post',
+                    'request': 'فیلتر محصولات',
+                    'result': 'موفق',
+                    'data': paginated_response.data,
+                }
+                return JsonResponse(json_response_body)
             except Exception as e:
                 print(str(e))
                 return JsonResponse(
@@ -747,16 +783,27 @@ class CategoryListView(APIView):
     def get(self, request, *args, **kwargs):
         return JsonResponse({'message': 'not allowed'})
 
+    def get_category_tree(self, categories):
+        serialized_data = []
+        for category in categories:
+            serialized_category = CategorySerializer(category).data
+            children = self.get_category_tree(category.parent_category.all())  # Use 'category_set' here
+            if children:
+                serialized_category['children'] = children
+            serialized_data.append(serialized_category)
+
+        return serialized_data
+
     def post(self, request, *args, **kwargs):
-        categories = Category.objects.filter()
-        if categories.count() == 0:
+        top_level_categories = Category.objects.filter(parent__isnull=True)
+        serialized_data = self.get_category_tree(top_level_categories)
+        if top_level_categories.count() == 0:
             return JsonResponse(create_json('post', 'لیست دسته', 'ناموفق', f'لیست دسته یافت نشد'))
-        serializer = CategorySerializer(categories, many=True)
         json_response_body = {
             'method': 'post',
             'request': 'لیست دسته',
             'result': 'موفق',
-            'data': serializer.data,
+            'data': serialized_data,
         }
         return JsonResponse(json_response_body)
 
@@ -784,23 +831,28 @@ class OrderView(APIView):
                 try:
                     receiver_province = front_input['receiver_province']
                 except:
-                    return JsonResponse(create_json('post', 'ثبت سفارش', 'ناموفق', f'مقدار receiver_province وارد نشده است'))
+                    return JsonResponse(
+                        create_json('post', 'ثبت سفارش', 'ناموفق', f'مقدار receiver_province وارد نشده است'))
                 try:
                     receiver_city = front_input['receiver_city']
                 except:
-                    return JsonResponse(create_json('post', 'ثبت سفارش', 'ناموفق', f'مقدار receiver_city وارد نشده است'))
+                    return JsonResponse(
+                        create_json('post', 'ثبت سفارش', 'ناموفق', f'مقدار receiver_city وارد نشده است'))
                 try:
                     receiver_zip_code = front_input['receiver_zip_code']
                 except:
-                    return JsonResponse(create_json('post', 'ثبت سفارش', 'ناموفق', f'مقدار receiver_zip_code وارد نشده است'))
+                    return JsonResponse(
+                        create_json('post', 'ثبت سفارش', 'ناموفق', f'مقدار receiver_zip_code وارد نشده است'))
                 try:
                     receiver_address = front_input['receiver_address']
                 except:
-                    return JsonResponse(create_json('post', 'ثبت سفارش', 'ناموفق', f'مقدار receiver_address وارد نشده است'))
+                    return JsonResponse(
+                        create_json('post', 'ثبت سفارش', 'ناموفق', f'مقدار receiver_address وارد نشده است'))
                 try:
                     receiver_mobile_phone_number = front_input['receiver_mobile_phone_number']
                 except:
-                    return JsonResponse(create_json('post', 'ثبت سفارش', 'ناموفق', f'مقدار receiver_mobile_phone_number وارد نشده است'))
+                    return JsonResponse(
+                        create_json('post', 'ثبت سفارش', 'ناموفق', f'مقدار receiver_mobile_phone_number وارد نشده است'))
                 pay_type = front_input['pay_type']  # pay_type = [wallet, direct]
                 if not pay_type:
                     return JsonResponse(
@@ -842,6 +894,7 @@ class OrderView(APIView):
                     first_name=request.user.user_profile.first_name,
                     last_name=request.user.user_profile.last_name,
                     national_code=request.user.user_profile.national_code,
+                    email=request.user.email,
                     mobile_phone_number=request.user.user_profile.mobile_phone_number,
                     landline=request.user.user_profile.landline,
                     card_number=request.user.user_profile.card_number,

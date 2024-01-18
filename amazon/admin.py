@@ -14,6 +14,7 @@ from custom_logs.models import custom_log
 @admin.register(Category)
 class CategoryAdmin(admin.ModelAdmin):
     list_display = (
+        'pk',
         'title_fa',
         'title_en',
         'parent',
@@ -59,7 +60,7 @@ class AutoUpdateAllParentTree(threading.Thread):
                     custom_cat_image_url = 'image: null'
                 else:
                     custom_cat_image_url = parent.cat_image.url
-                parent_tree_list.append([parent.title_fa, parent.title_en, custom_title_slug, custom_cat_image_url])
+                parent_tree_list.append([parent.id, parent.title_fa, parent.title_en, custom_title_slug, custom_cat_image_url])
                 while True:
                     parent = parent.parent
                     if parent:
@@ -72,7 +73,7 @@ class AutoUpdateAllParentTree(threading.Thread):
                         else:
                             custom_cat_image_url = parent.cat_image.url
                         parent_tree_list.append(
-                            [parent.title_fa, parent.title_en, custom_title_slug, custom_cat_image_url])
+                            [parent.id, parent.title_fa, parent.title_en, custom_title_slug, custom_cat_image_url])
                     else:
                         break
             else:
@@ -124,6 +125,8 @@ class AmazonProductAdmin(admin.ModelAdmin):
     search_fields = (
         'asin',
         'created_by__username',
+        'categories__title_fa',
+        'categories__title_en',
     )
 
     fields = (

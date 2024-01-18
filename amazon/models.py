@@ -119,6 +119,7 @@ class AmazonProduct(models.Model):
                                    verbose_name='کاربر بروز کننده')
 
     class Meta:
+        ordering = ['-created_at',]
         verbose_name = 'محصول آمازون'
         verbose_name_plural = 'محصولات آمازون'
 
