@@ -262,6 +262,7 @@ class Docs(APIView):
                                 'like_list': 'علاقه مندی ها',
                                 'wish_list': 'ویش ها',
                                 'temp_card': 'سبد خرید موقت',
+                                'unseen_ticket_number': 'تعداد تیکت های دیده نشده کاربر',
                             },
                         },
                         'لیست خطا های احتمالی': {

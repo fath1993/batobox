@@ -49,6 +49,7 @@ class Profile(models.Model):
     like_list = models.TextField(null=True, blank=True, verbose_name='لیست محصولات مورد علاقه')
     wish_list = models.TextField(null=True, blank=True, verbose_name='لیست خرید های احتمالی در آینده')
     temp_card = models.TextField(null=True, blank=True, verbose_name='محصولات در سبد خرید')
+    unseen_ticket_number = models.PositiveIntegerField(default=0, null=False, blank=False, editable=False, verbose_name='تعداد تیکت های دیده نشده')
 
     def __str__(self):
         return self.user.username

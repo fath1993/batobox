@@ -11,6 +11,7 @@ class ProfileAdmin(admin.ModelAdmin):
 
     readonly_fields = (
         'user',
+        'unseen_ticket_number',
     )
 
     fields = (
@@ -27,6 +28,7 @@ class ProfileAdmin(admin.ModelAdmin):
         'like_list',
         'wish_list',
         'temp_card',
+        'unseen_ticket_number',
     )
 
     def has_add_permission(self, request):

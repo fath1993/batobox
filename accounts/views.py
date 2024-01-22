@@ -755,7 +755,7 @@ class WalletChargeView(APIView):
                     last_name=request.user.user_profile.last_name,
                     national_code=request.user.user_profile.national_code,
                     email=request.user.email,
-                    mobile_phone_number=request.user.user_profile.mobile_phone_number,
+                    mobile_phone_number=request.user.username,
                     landline=request.user.user_profile.landline,
                     card_number=request.user.user_profile.card_number,
                     isbn=request.user.user_profile.isbn,

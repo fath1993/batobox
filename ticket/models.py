@@ -29,6 +29,14 @@ class Ticket(models.Model):
         verbose_name = 'تیکت'
         verbose_name_plural = 'تیکت ها'
 
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        user_profile = self.belong_to.user_profile
+        unseen_tickets = Ticket.objects.filter(belong_to=self.belong_to, has_seen_by_user=False)
+        user_profile.unseen_ticket_number = unseen_tickets.count()
+        user_profile.save()
+        super().save(*args, **kwargs)
+
 
 class Message(models.Model):
     ticket = models.ForeignKey(Ticket, related_name='ticket_message', on_delete=models.CASCADE, null=False, blank=False,
