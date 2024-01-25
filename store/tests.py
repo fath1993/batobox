@@ -2,27 +2,97 @@ import requests
 from batobox.settings import BASE_DIR, BASE_URL
 
 
-def test_create_new_product(amazon_asin=None, product_link=None, currency=None, weight=None, price=None,
-                            description=None):
-    url = f'{BASE_URL}store/api/product-price-calculator/'
+def test_product_price_calculator_fetch_data():
+    url = f'https://api.batobox.net/store/api/product-price-calculator/'
 
-    # amazon_asin = 'B07B8396VQ'
-    # product_link = 'https://x.com'
-    # currency = 'AED'
-    # weight = '150'
-    # price = '289'
-    # description = 'هیچی'
+    product_link = 'https://www.amazon.ae/Dell-Latitude-7490-Touchscreen-Business/dp/B0CL39CDW5'
+    process_type = 'fetch_data_from_amazon'
+    numbers = '1'
+    description = 'دریافت داده در حالت دریافت  اطلاعات از رین فارست'
 
     headers = {
-        'Authorization': 'BatoboxToken 83f7f9f663769f8ae47da6ac14c88c67f0de2c68ff66c4725fe48a937efc7270'
+        'Authorization': 'BatoboxToken 7b34ed182060d88027f6481ccca976fa3ff53123acc852505f18a2f922ce8d51'
     }
     data = {
-        'amazon_asin': f'{amazon_asin}',
-        # 'product_link': f'{product_link}',
+        'product_link': product_link,
+        'process_type': process_type,
+        'numbers': numbers,
+        'description': description,
+    }
+    try:
+        response = requests.post(url=url, headers=headers, json=data)
+        print(response.json())
+    except Exception as e:
+        print(str(e))
+
+
+def test_product_price_calculator_calculate_price_amazon_product():
+    url = f'https://api.batobox.net/store/api/product-price-calculator/'
+
+    product_link = 'https://www.amazon.ae/Dell-Latitude-7490-Touchscreen-Business/dp/B0CL39CDW5'
+    process_type = 'calculate_price'
+    numbers = '1'
+    description = 'دریافت داده در حالت دریافت  اطلاعات از رین فارست'
+
+    headers = {
+        'Authorization': 'BatoboxToken 7b34ed182060d88027f6481ccca976fa3ff53123acc852505f18a2f922ce8d51'
+    }
+
+    data = {
+        'product_link': product_link,
+        'process_type': process_type,
+        'numbers': numbers,
+        'description': description,
+    }
+    try:
+        response = requests.post(url=url, headers=headers, json=data)
+        print(response.json())
+    except Exception as e:
+        print(str(e))
+
+
+def test_product_price_calculator_calculate_price_other_product():
+    url = f'https://api.batobox.net/store/api/product-price-calculator/'
+
+    product_link = 'https://zara.com/product_id=x25486df865'
+    process_type = 'calculate_price'
+    currency = 'AED'
+    weight = '200'
+    price = '100'
+    numbers = '1'
+    description = 'دریافت داده در حالت دریافت  اطلاعات از رین فارست'
+
+    headers = {
+        'Authorization': 'BatoboxToken 7b34ed182060d88027f6481ccca976fa3ff53123acc852505f18a2f922ce8d51'
+    }
+
+    data = {
+        'product_link': product_link,
+        'process_type': process_type,
         'currency': currency,
         'weight': weight,
         'price': price,
+        'numbers': numbers,
         'description': description,
+    }
+    try:
+        response = requests.post(url=url, headers=headers, json=data)
+        print(response.json())
+    except Exception as e:
+        print(str(e))
+
+
+def test_update_request_products():
+    url = f'https://api.batobox.net/store/api/update-request-products/'
+
+    request_product_id_list = '102, 103'
+
+    headers = {
+        'Authorization': 'BatoboxToken 7b34ed182060d88027f6481ccca976fa3ff53123acc852505f18a2f922ce8d51'
+    }
+
+    data = {
+        'request_product_id_list': request_product_id_list,
     }
     try:
         response = requests.post(url=url, headers=headers, json=data)

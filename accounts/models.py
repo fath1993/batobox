@@ -8,11 +8,6 @@ from django_jalali.db import models as jmodel
 
 from store.models import RequestedProduct
 
-ORDER_STATUS = (('در حال بررسی', 'در حال بررسی'), ('پرداخت شده و در انتظار بررسی', 'پرداخت شده و در انتظار بررسی'),
-                ('در انتظار پرداخت مبلغ اصلاحیه', 'در انتظار پرداخت مبلغ اصلاحیه'), ('دریافت سفارش', 'دریافت سفارش'),
-                ('ثبت سفارش در سایت خارجی', 'ثبت سفارش در سایت خارجی'), ('در واحد خارج از کشور', 'در واحد خارج از کشور'),
-                ('ارسال به ایران', 'ارسال به ایران'), ('در گمرک', 'در گمرک'), ('در انبار باتوباکس', 'در انبار باتوباکس'),
-                ('ارسال شده', 'ارسال شده'), ('تکمیل شده', 'تکمیل شده'), ('لغو شده', 'لغو شده'))
 
 TRANSACTION_STATUS = (('پرداخت نشده', 'پرداخت نشده'), ('پرداخت شده', 'پرداخت شده'))
 
@@ -80,7 +75,6 @@ class PaymentCode(models.Model):
 
 class Order(models.Model):
     products = models.ManyToManyField(RequestedProduct, blank=True, verbose_name='محصولات نهایی شده')
-    order_status = models.CharField(max_length=255, choices=ORDER_STATUS, default='در حال بررسی', verbose_name='وضعیت سفارش')
     description = models.CharField(max_length=255, null=True, blank=True, verbose_name='توضیحات')
 
     # user who has ordered product

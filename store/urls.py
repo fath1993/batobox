@@ -1,7 +1,7 @@
 from django.urls import path, include
 from store.views import ProductPriceCalculator, ProductView, ProductListView, CurrencyListView, OrderView, \
     BatoboxShippingListView, BatoboxCurrencyExchangeCommissionListView, RequestPayView, PayConfirmView, OrderListView, \
-    TransactionListView, CategoryListView
+    TransactionListView, CategoryListView, UpdateRequestedProductsView
 
 app_name = 'store'
 
@@ -13,6 +13,7 @@ urlpatterns = (
     path('api/categories/', CategoryListView.as_view(), name='categories'),
 
     # store
+    path('api/update-request-products/', UpdateRequestedProductsView.as_view(), name='update-request-products'),
     path('api/order/', OrderView.as_view(), name='order'),
     path('api/request-pay/', RequestPayView.as_view(), name='request-pay'),
     path('api/pay-confirm/', PayConfirmView.as_view(), name='pay-confirm'),

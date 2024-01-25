@@ -2,6 +2,7 @@ from django.contrib.auth.models import User
 from django.db import models
 from django_jalali.db import models as jmodel
 
+from custom_logs.models import custom_log
 from storage.models import Storage
 
 TICKET_STATUS = (('ایجاد شده', 'ایجاد شده'), ('در حال بررسی', 'در حال بررسی'), ('پاسخ ادمین', 'پاسخ ادمین'),
@@ -35,7 +36,6 @@ class Ticket(models.Model):
         unseen_tickets = Ticket.objects.filter(belong_to=self.belong_to, has_seen_by_user=False)
         user_profile.unseen_ticket_number = unseen_tickets.count()
         user_profile.save()
-        super().save(*args, **kwargs)
 
 
 class Message(models.Model):

@@ -6,6 +6,7 @@ from knox.auth import TokenAuthentication
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.views import APIView
 
+from custom_logs.models import custom_log
 from storage.models import Storage
 from ticket.models import Ticket, Message
 from ticket.serializer import TicketSerializer, MessageSerializer
@@ -32,7 +33,7 @@ class TicketView(APIView):
                     return JsonResponse(
                         create_json('post', 'ساخت تیکت', 'ناموفق', f'عنوان تیکت بدرستی ارسال نشده است'))
                 new_ticket = Ticket.objects.create(
-                    status='ساخته شده',
+                    status='ایجاد شده',
                     title=ticket_title,
                     belong_to=request.user,
                     created_by=request.user,
@@ -51,7 +52,7 @@ class TicketView(APIView):
                 }
                 return JsonResponse(json_response_body)
             except Exception as e:
-                print(str(e))
+                custom_log(str(e))
                 return JsonResponse(
                     create_json('post', 'ساخت تیکت', 'ناموفق', f'داده ورودی کامل ارسال نشده است'))
         except Exception as e:
@@ -128,7 +129,7 @@ class MessageNewView(APIView):
         if not content:
             return JsonResponse(create_json('post', 'ساخت پیام تیکت', 'ناموفق', f'content بدرستی ارسال نشده است'))
         try:
-            ticket = Ticket.objects.get(id=ticket_id, created_by=request.user)
+            ticket = Ticket.objects.get(id=ticket_id, belong_to=request.user)
             new_message = Message.objects.create(
                 ticket=ticket,
                 content=content,

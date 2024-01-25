@@ -81,14 +81,17 @@ def update_amazon_product_from_rainforest_api(amazon_product):
             if str(product_title) != '':
                 amazon_product.title_en = product_title
                 amazon_product.slug_title = slugify(product_title)
-                amazon_product.slug = slugify(product_title)
+                if not amazon_product.slug:
+                    amazon_product.slug = slugify(product_title)
             try:
                 translator = Translator()
                 title_fa = translator.translate(product_title, dest='fa').text
                 if str(title_fa) != '':
                     amazon_product.title_fa = title_fa
-                    amazon_product.seo_title = title_fa
-                    amazon_product.seo_description = title_fa
+                    if not amazon_product.seo_title:
+                        amazon_product.seo_title = title_fa
+                    if not amazon_product.seo_description:
+                        amazon_product.seo_description = title_fa
             except Exception as e:
                 pass
         except Exception as e:
@@ -164,7 +167,8 @@ def update_amazon_product_from_rainforest_api(amazon_product):
             product_keywords_flat = str(product_keywords_flat)
             if product_keywords_flat != '':
                 amazon_product.keywords_flat = product_keywords_flat
-                amazon_product.seo_keywords = product_keywords_flat
+                if not amazon_product.seo_keywords:
+                    amazon_product.seo_keywords = product_keywords_flat
         except Exception as e:
             pass
         try:
@@ -483,4 +487,6 @@ class DownloadFilesThread(threading.Thread):
                         time.sleep(1)
             except Exception as e:
                 print(f'the error has occurred when downloading the file {file[1]}. err: {str(e)}')
+
+
 

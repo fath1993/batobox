@@ -73,6 +73,7 @@ class BatoboxCurrencyExchangeCommissionAdmin(admin.ModelAdmin):
 class ProductAdmin(admin.ModelAdmin):
     list_display = (
         'object_id_display',
+        'request_status',
         'link',
         'description',
         'final_price',
@@ -84,10 +85,12 @@ class ProductAdmin(admin.ModelAdmin):
 
     readonly_fields = (
         'created_at',
+        'updated_at',
         'created_by',
     )
 
     fields = (
+        'request_status',
         'link',
         'currency',
         'batobox_shipping',
@@ -102,6 +105,7 @@ class ProductAdmin(admin.ModelAdmin):
         'currency_exchange_percentage',
         'final_price_in_toman',
         'created_at',
+        'updated_at',
         'created_by',
     )
 

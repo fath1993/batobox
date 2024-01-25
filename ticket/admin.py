@@ -41,6 +41,10 @@ class TicketAdmin(admin.ModelAdmin):
             instance.updated_by = request.user
         else:
             instance.updated_by = request.user
+        user_profile = instance.belong_to.user_profile
+        unseen_tickets = Ticket.objects.filter(belong_to=instance.belong_to, has_seen_by_user=False)
+        user_profile.unseen_ticket_number = unseen_tickets.count()
+        user_profile.save()
         instance.save()
         form.save_m2m()
         return instance

@@ -8,6 +8,13 @@ from storage.models import Storage
 from auditlog.registry import auditlog
 
 
+REQUEST_STATUS = (('در حال بررسی', 'در حال بررسی'), ('پرداخت شده و در انتظار بررسی', 'پرداخت شده و در انتظار بررسی'),
+                ('در انتظار پرداخت مبلغ اصلاحیه', 'در انتظار پرداخت مبلغ اصلاحیه'), ('دریافت سفارش', 'دریافت سفارش'),
+                ('ثبت سفارش در سایت خارجی', 'ثبت سفارش در سایت خارجی'), ('در واحد خارج از کشور', 'در واحد خارج از کشور'),
+                ('ارسال به ایران', 'ارسال به ایران'), ('در گمرک', 'در گمرک'), ('در انبار باتوباکس', 'در انبار باتوباکس'),
+                ('ارسال شده', 'ارسال شده'), ('تکمیل شده', 'تکمیل شده'), ('لغو شده', 'لغو شده'))
+
+
 class Currency(models.Model):
     name = models.CharField(max_length=255, null=False, blank=False, verbose_name='نام')
     badge = models.CharField(max_length=255, null=False, blank=False, verbose_name='نماد')
@@ -71,6 +78,7 @@ class BatoboxCurrencyExchangeCommission(models.Model):
 
 
 class RequestedProduct(models.Model):
+    request_status = models.CharField(max_length=255, choices=REQUEST_STATUS, default='در حال بررسی', verbose_name='وضعیت سفارش')
     link = models.CharField(max_length=255, null=True, blank=True, verbose_name='لینک')
     currency = models.TextField(null=True, blank=True, verbose_name='اطلاعات ارز')
     batobox_shipping = models.TextField(null=True, blank=True, verbose_name='اطلاعات حمل و نقل')
@@ -90,6 +98,7 @@ class RequestedProduct(models.Model):
 
 
     created_at = jmodel.jDateTimeField(auto_now_add=True, verbose_name='تاریخ ایجاد')
+    updated_at = jmodel.jDateTimeField(auto_now=True, verbose_name='تاریخ بروز رسانی')
     created_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name='product_created_by', null=False,
                                    blank=False, editable=False,
                                    verbose_name='کاربر ثبت کننده')
@@ -100,6 +109,11 @@ class RequestedProduct(models.Model):
 
     def __str__(self):
         return f'{self.id}'
+
+    def save(self, *args, **kwargs):
+        if not self.request_status:
+            self.request_status = 'در حال بررسی'
+        super().save(*args, **kwargs)
 
 
 class ProductCalculatorAccessHistory(models.Model):

@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from store.models import Currency, BatoboxShipping, BatoboxCurrencyExchangeCommission
+from store.models import Currency, BatoboxShipping, BatoboxCurrencyExchangeCommission, RequestedProduct
 
 
 class CurrencySerializer(serializers.ModelSerializer):
@@ -31,3 +31,10 @@ class BatoboxCurrencyExchangeCommissionSerializer(serializers.ModelSerializer):
         ret = super().to_representation(instance)
         ret['currency'] = instance.currency.badge
         return ret
+
+
+class RequestedProductSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = RequestedProduct
+        fields = "__all__"

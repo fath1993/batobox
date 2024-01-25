@@ -3,6 +3,7 @@ import uuid
 
 import jdatetime
 import requests
+from django.contrib.auth.models import User
 from django.db.models import Q
 from django.http import JsonResponse
 from django.shortcuts import redirect
@@ -21,14 +22,15 @@ from batobox.settings import ZARINPAL_API_KEY, BASE_URL, BASE_FRONT_URL
 from custom_logs.models import custom_log
 from store.models import ProductCalculatorAccessHistory, RequestedProduct, Currency, BatoboxShipping, \
     BatoboxCurrencyExchangeCommission
-from store.serializer import CurrencySerializer, BatoboxShippingSerializer, BatoboxCurrencyExchangeCommissionSerializer
+from store.serializer import CurrencySerializer, BatoboxShippingSerializer, BatoboxCurrencyExchangeCommissionSerializer, \
+    RequestedProductSerializer
 from utilities.http_metod import fetch_data_from_http_get
 from utilities.utilities import create_json, date_string_to_date_format
 
 
 class ProductPriceCalculator(APIView):
-    authentication_classes = (TokenAuthentication,)
-    permission_classes = (IsAuthenticated,)
+    authentication_classes = (TokenAuthentication, )
+    permission_classes = (AllowAny,)
 
     def __init__(self):
         super().__init__()
@@ -38,14 +40,10 @@ class ProductPriceCalculator(APIView):
 
     def post(self, request, *args, **kwargs):
         default_provided_url = None
-        batobox_product_url = None
         batobox_product_id = None
-        currency = None
-        weight = None
-        price = None
-        description = None
-        numbers = None
         now = jdatetime.datetime.now()
+        if not request.user.is_authenticated:
+            request.user = User.objects.get(username='bxmanager')
         try:
             all_product_calculator_access_history = ProductCalculatorAccessHistory.objects.filter(
                 created_by=request.user)
@@ -127,79 +125,17 @@ class ProductPriceCalculator(APIView):
                         update_amazon_product_from_rainforest_api(amazon_product)
                     amazon_product = AmazonProduct.objects.filter(id=amazon_product.id)
                     serializer = AmazonProductSerializer(amazon_product, many=True)
-                    return Response(serializer.data)
+                    json_response_body = {
+                        'method': 'post',
+                        'request': 'محاسبه قیمت',
+                        'result': 'موفق',
+                        'data': serializer.data,
+                    }
+                    return JsonResponse(json_response_body)
                 else:
                     return JsonResponse(create_json('post', 'محاسبه قیمت', 'ناموفق',
                                                     f'ارسال یکی از پارامتر های product_link یا amazon_asin جهت محاسبه ی قیمت ضروری است'))
             elif process_type == 'calculate_price':
-                try:
-                    currency_unique_code = front_input['currency_unique_code']
-                    if currency_unique_code == '':
-                        currency_unique_code = None
-                except:
-                    currency_unique_code = None
-                if not currency_unique_code:
-                    return JsonResponse(create_json('post', 'محاسبه قیمت', 'ناموفق',
-                                                    f'ارسال پارامتر currency_unique_code ضروری است'))
-                else:
-                    try:
-                        front_received_currency = Currency.objects.get(unique_code=currency_unique_code)
-                    except:
-                        return JsonResponse(create_json('post', 'محاسبه قیمت', 'ناموفق',
-                                                        f'پارامتر currency_unique_code صحیح نیست یا منقضی شده است'))
-                try:
-                    batobox_shipping_unique_code = front_input['batobox_shipping_unique_code']
-                    if batobox_shipping_unique_code == '':
-                        batobox_shipping_unique_code = None
-                except:
-                    batobox_shipping_unique_code = None
-                if not batobox_shipping_unique_code:
-                    return JsonResponse(create_json('post', 'محاسبه قیمت', 'ناموفق',
-                                                    f'ارسال پارامتر batobox_shipping_unique_code ضروری است'))
-                else:
-                    try:
-                        front_received_shipping = BatoboxShipping.objects.get(unique_code=batobox_shipping_unique_code)
-                    except:
-                        return JsonResponse(create_json('post', 'محاسبه قیمت', 'ناموفق',
-                                                        f'پارامتر batobox_shipping_unique_code صحیح نیست یا منقضی شده است'))
-                try:
-                    batobox_currency_exchange_unique_code = front_input['batobox_currency_exchange_unique_code']
-                    if batobox_currency_exchange_unique_code == '':
-                        batobox_currency_exchange_unique_code = None
-                except:
-                    batobox_currency_exchange_unique_code = None
-                if not batobox_currency_exchange_unique_code:
-                    return JsonResponse(create_json('post', 'محاسبه قیمت', 'ناموفق',
-                                                    f'ارسال پارامتر batobox_currency_exchange_unique_code ضروری است'))
-                else:
-                    try:
-                        front_received_batobox_currency_exchange_commission = BatoboxCurrencyExchangeCommission.objects.get(
-                            unique_code=batobox_currency_exchange_unique_code)
-                    except:
-                        return JsonResponse(create_json('post', 'محاسبه قیمت', 'ناموفق',
-                                                        f'پارامتر batobox_currency_exchange_unique_code صحیح نیست یا منقضی شده است'))
-                try:
-                    weight = front_input['weight']
-                    if weight == '':
-                        weight = None
-                    if weight is not None:
-                        try:
-                            weight = int(weight)
-                        except:
-                            weight = None
-                except:
-                    weight = None
-                try:
-                    price = front_input['price']
-                    if price == '':
-                        price = None
-                    if price is not None:
-                        try:
-                            price = float(price)
-                        except:
-                            price = None
-                except:
-                    price = None
                 try:
                     description = front_input['description']
                     if description == '':
@@ -217,7 +153,6 @@ class ProductPriceCalculator(APIView):
                             numbers = None
                 except:
                     numbers = None
-
                 if product_link:
                     default_provided_url = product_link
                     if str(product_link).find('https://www.amazon.ae/') != -1:
@@ -225,16 +160,6 @@ class ProductPriceCalculator(APIView):
                             start_index = str(product_link).find('/dp/') + 4
                             end_index = start_index + 10
                             amazon_asin = str(product_link)[start_index:end_index]
-                    else:
-                        if not currency:
-                            return JsonResponse(create_json('post', 'محاسبه قیمت', 'ناموفق',
-                                                            f'ارسال نماد ارز برای محصولات غیر از آمازون ضروری است'))
-                        if not weight:
-                            return JsonResponse(create_json('post', 'محاسبه قیمت', 'ناموفق',
-                                                            f'ارسال وزن برای محصولات غیر از آمازون ضروری است'))
-                        if not price:
-                            return JsonResponse(create_json('post', 'محاسبه قیمت', 'ناموفق',
-                                                            f'ارسال قیمت برای محصولات غیر از آمازون ضروری است'))
                 if amazon_asin:
                     try:
                         amazon_product = AmazonProduct.objects.get(asin=amazon_asin)
@@ -288,37 +213,66 @@ class ProductPriceCalculator(APIView):
                         updated_amazon_product_total_price = updated_amazon_product.total_price
 
                         if not updated_amazon_product_currency:
-                            if not currency:
-                                return JsonResponse(create_json('post', 'محاسبه قیمت', 'ناموفق',
-                                                                f'محصول آمازون یافت نشد. ارسال نماد ارز برای محاسبه قیمت ضروری است'))
-                        else:
-                            currency = updated_amazon_product_currency
-
+                            updated_amazon_product.currency = 'AED'
+                            updated_amazon_product_currency = 'AED'
                         if not updated_amazon_product_weight:
-                            if not weight:
-                                return JsonResponse(create_json('post', 'محاسبه قیمت', 'ناموفق',
-                                                                f'محصول آمازون یافت نشد. ارسال وزن برای محاسبه قیمت ضروری است'))
-                        else:
-                            if updated_amazon_product_weight == 0:
-                                if not weight:
-                                    return JsonResponse(create_json('post', 'محاسبه قیمت', 'ناموفق',
-                                                                    f'وزن محصول آمازون قابل دریافت نیست. ارسال وزن برای محاسبه قیمت نهایی ضروری است'))
-                            else:
-                                weight = updated_amazon_product_weight
-
+                            updated_amazon_product.weight = 0
+                            updated_amazon_product_weight = 0
                         if not updated_amazon_product_total_price:
-                            if not price:
-                                return JsonResponse(create_json('post', 'محاسبه قیمت', 'ناموفق',
-                                                                f'محصول آمازون یافت نشد. ارسال قیمت برای محاسبه قیمت نهایی ضروری است'))
+                            updated_amazon_product.total_price = 0
+                            updated_amazon_product_total_price = 0
+                        updated_amazon_product.save()
+                        amazon_product = updated_amazon_product
+                    currency = Currency.objects.get(badge='AED')
+                    weight = amazon_product.weight
+                    price = amazon_product.total_price
+                    total_price = price * numbers
+                    total_weight = weight * numbers
+                else:
+                    try:
+                        currency = front_input['currency']
+                        if currency == '':
+                            currency = None
                         else:
-                            if updated_amazon_product_total_price == 0:
-                                if not price:
-                                    return JsonResponse(create_json('post', 'محاسبه قیمت', 'ناموفق',
-                                                                    f'قیمت محصول آمازون قابل دریافت نیست. ارسال قیمت برای محاسبه قیمت نهایی ضروری است'))
-                            else:
-                                price = updated_amazon_product_total_price
-                total_price = price * numbers
-                total_weight = weight * numbers
+                            try:
+                                currency = Currency.objects.get(badge=currency)
+                            except:
+                                currency = None
+                    except:
+                        currency = None
+                    try:
+                        weight = front_input['weight']
+                        if weight == '':
+                            weight = None
+                        if weight is not None:
+                            try:
+                                weight = int(weight)
+                            except:
+                                weight = None
+                    except:
+                        weight = None
+                    try:
+                        price = front_input['price']
+                        if price == '':
+                            price = None
+                        if price is not None:
+                            try:
+                                price = float(price)
+                            except:
+                                price = None
+                    except:
+                        price = None
+                    if not currency:
+                        return JsonResponse(create_json('post', 'محاسبه قیمت', 'ناموفق',
+                                                        f'ارسال نماد ارز برای محصولات غیر از آمازون ضروری است'))
+                    if not weight:
+                        return JsonResponse(create_json('post', 'محاسبه قیمت', 'ناموفق',
+                                                        f'ارسال وزن برای محصولات غیر از آمازون ضروری است'))
+                    if not price:
+                        return JsonResponse(create_json('post', 'محاسبه قیمت', 'ناموفق',
+                                                        f'ارسال قیمت برای محصولات غیر از آمازون ضروری است'))
+                    total_price = price * numbers
+                    total_weight = weight * numbers
 
                 batobox_all_shipping = BatoboxShipping.objects.filter()
                 shipping_base_on_calculated_weight = None
@@ -326,22 +280,6 @@ class ProductPriceCalculator(APIView):
                     if batobox_shipping.weight_from <= total_weight <= batobox_shipping.weight_to:
                         shipping_base_on_calculated_weight = batobox_shipping
                         break
-                if not shipping_base_on_calculated_weight:
-                    return JsonResponse(create_json('post', 'محاسبه قیمت', 'ناموفق',
-                                                    f'هزینه حمل و نقل متناسب با وزن ضربدر تعداد محصول درخواستی یافت نشد'))
-
-                if shipping_base_on_calculated_weight.id != front_received_shipping.id:
-                    return JsonResponse(create_json('post', 'محاسبه قیمت', 'ناموفق',
-                                                    f'هزینه حمل ارسالی متناسب با وزن ضربدر تعداد محصول نبوده و قابل پذیرش نمی باشد'))
-
-                if not currency:
-                    currency = front_received_currency
-                else:
-                    if front_received_currency.badge != currency:
-                        return JsonResponse(create_json('post', 'محاسبه قیمت', 'ناموفق',
-                                                        f'نماد ارز ارسالی با نماد ارز محصول یکی نیست'))
-                    else:
-                        currency = front_received_currency
 
                 batobox_all_commission = BatoboxCurrencyExchangeCommission.objects.filter()
                 commission_base_on_calculated_total_price = None
@@ -349,25 +287,6 @@ class ProductPriceCalculator(APIView):
                     if batobox_commission.price_from <= total_price <= batobox_commission.price_to:
                         commission_base_on_calculated_total_price = batobox_commission
                         break
-                if not commission_base_on_calculated_total_price:
-                    return JsonResponse(create_json('post', 'محاسبه قیمت', 'ناموفق',
-                                                    f'کمیسیون متناسب با قیمت ضربدر تعداد محصول درخواستی یافت نشد'))
-
-                if commission_base_on_calculated_total_price.id != front_received_batobox_currency_exchange_commission.id:
-                    return JsonResponse(create_json('post', 'محاسبه قیمت', 'ناموفق',
-                                                    f'کمیسیون ارسالی متناسب با قیمت ضربدر تعداد محصول نبوده و قابل پذیرش نمی باشد'))
-
-                #
-                #
-                # front_received_currency
-                # front_received_shipping
-                # front_received_batobox_currency_exchange_commission
-                #
-                # currency
-                # weight
-                # price
-                # description
-                # numbers
 
                 currency_json = {
                     'name': currency.name,
@@ -395,9 +314,8 @@ class ProductPriceCalculator(APIView):
                 final_price = total_price + batobox_shipping_price
                 currency_exchange_percentage = commission_base_on_calculated_total_price.exchange_percentage
                 currency_equivalent_price_in_toman = currency.currency_equivalent_price_in_toman
-                final_price_in_toman = (price + batobox_shipping_price) * float(
-                    currency_equivalent_price_in_toman) * float(
-                    f'1.{currency_exchange_percentage}')
+                currency_equivalent_price_in_toman_with_commission = float(currency_equivalent_price_in_toman) * float(f'1.{currency_exchange_percentage}')
+                final_price_in_toman = (final_price + batobox_shipping_price) * currency_equivalent_price_in_toman_with_commission
                 final_price_in_toman = int(round(final_price_in_toman, -3))
                 new_requested_product = RequestedProduct.objects.create(
                     link=default_provided_url,
@@ -416,39 +334,176 @@ class ProductPriceCalculator(APIView):
                     created_at=request.user,
                     created_by=request.user,
                 )
-
+                requested_product = RequestedProduct.objects.filter(id=new_requested_product.id)
+                request_product_serializer = RequestedProductSerializer(requested_product, many=True)
                 json_response_body = {
                     'method': 'post',
                     'request': 'محاسبه قیمت',
                     'result': 'موفق',
-                    'product_detail': {
-                        'requested_product_id': new_requested_product.id,
-                        'link': default_provided_url,
-                        'currency': currency_json,
-                        'batobox_shipping': batobox_shipping_json,
-                        'batobox_currency_exchange_commission': batobox_currency_exchange_commission_json,
-                        'numbers': numbers,
-                        'weight': weight,
-                        'weight_numbers': total_weight,
-                        'description': description,
-                        'product_price': price,
-                        'product_price_numbers': total_price,
-                        'batobox_shipping_price': batobox_shipping_price,
-                        'final_price': final_price,
-                        'currency_equivalent_price_in_toman': currency_equivalent_price_in_toman,
-                        'currency_exchange_percentage': currency_exchange_percentage,
-                        'final_price_in_toman': final_price_in_toman,
-                    }
+                    'data': request_product_serializer.data,
                 }
-                if batobox_product_id:
-                    json_response_body['batobox_product_id'] = batobox_product_id
                 return JsonResponse(json_response_body)
             else:
                 return JsonResponse(create_json('post', 'محاسبه قیمت', 'ناموفق',
                                                 f'پارامتر process_type بدرستی ارسال نشده است'))
         except Exception as e:
             custom_log(str(e))
-            return JsonResponse(create_json('post', 'محصول جدید', 'ناموفق', f'ورودی صحیح نیست.'))
+            return JsonResponse(create_json('post', 'محصول جدید', 'ناموفق', f'{e}ورودی صحیح نیست.'))
+
+    def put(self, request, *args, **kwargs):
+        return JsonResponse({'message': 'not allowed'})
+
+    def delete(self, request, *args, **kwargs):
+        return JsonResponse({'message': 'not allowed'})
+
+
+class UpdateRequestedProductsView(APIView):
+    authentication_classes = (TokenAuthentication, )
+    permission_classes = (IsAuthenticated,)
+
+    def __init__(self):
+        super().__init__()
+
+    def get(self, request, *args, **kwargs):
+        return JsonResponse({'message': 'not allowed'})
+
+    def post(self, request, *args, **kwargs):
+        now = jdatetime.datetime.now()
+        try:
+            all_product_calculator_access_history = ProductCalculatorAccessHistory.objects.filter(
+                created_by=request.user)
+            if all_product_calculator_access_history.count() != 0:
+                latest_product_calculator_access_history = all_product_calculator_access_history.latest('created_at')
+                total_seconds_between_request = (
+                        now - latest_product_calculator_access_history.created_at).total_seconds()
+                if total_seconds_between_request < 1:
+                    return JsonResponse(create_json('post', 'بروز رسانی درخواست', 'ناموفق',
+                                                    f'بروز رسانی درخواست پس از گذشت {int(round(10 * 60 - total_seconds_between_request, 0))} ثانیه امکان پذیر است.'))
+        except Exception as e:
+            pass
+        try:
+            front_input = json.loads(request.body)
+            try:
+                product_id_list = front_input['request_product_id_list']
+
+                if product_id_list is None:
+                    return JsonResponse(create_json('post', 'بروز رسانی محصولات درخواستی', 'ناموفق', f'لیست ایدی محصولات درخواستی خالی است'))
+                else:
+                    product_id_list = str(product_id_list).split(',')
+                try:
+                    requested_products = RequestedProduct.objects.filter(id__in=product_id_list, created_by=request.user)
+                    if requested_products.count() == 0:
+                        raise Exception
+                    update_request_list = []
+                    remove_request_list = []
+                    for requested_product in requested_products:
+                        new_calculation = True
+                        try:
+                            amazon_product = AmazonProduct.objects.get(product_main_url=requested_product.link)
+                            update_amazon_product_from_rainforest_api(amazon_product)
+                            total_price = amazon_product.total_price * requested_product.numbers
+                            total_weight = amazon_product.weight * requested_product.numbers
+                            try:
+                                total_price = float(total_price)
+                                if total_price == 0:
+                                    remove_request_list.append(requested_product)
+                                    new_calculation = False
+                            except:
+                                remove_request_list.append(requested_product)
+                                new_calculation = False
+                            try:
+                                total_weight = float(total_weight)
+                                if total_weight == 0:
+                                    remove_request_list.append(requested_product)
+                                    new_calculation = False
+                            except:
+                                remove_request_list.append(requested_product)
+                                new_calculation = False
+                        except:
+                            total_price = requested_product.product_price * requested_product.numbers
+                            total_weight = requested_product.weight * requested_product.numbers
+                        if new_calculation:
+                            currency_badge = json.loads(requested_product.currency)['badge']
+                            try:
+                                currency = Currency.objects.get(badge=currency_badge)
+                                batobox_all_shipping = BatoboxShipping.objects.filter()
+                                shipping_base_on_calculated_weight = None
+                                for batobox_shipping in batobox_all_shipping:
+                                    if batobox_shipping.weight_from <= total_weight <= batobox_shipping.weight_to:
+                                        shipping_base_on_calculated_weight = batobox_shipping
+                                        break
+
+                                batobox_all_commission = BatoboxCurrencyExchangeCommission.objects.filter()
+                                commission_base_on_calculated_total_price = None
+                                for batobox_commission in batobox_all_commission:
+                                    if batobox_commission.price_from <= total_price <= batobox_commission.price_to:
+                                        commission_base_on_calculated_total_price = batobox_commission
+                                        break
+                                currency_json = {
+                                    'name': currency.name,
+                                    'badge': currency.badge,
+                                    'currency_equivalent_price_in_toman': currency.currency_equivalent_price_in_toman,
+                                    'is_active': currency.is_active,
+                                    'unique_code': currency.unique_code,
+                                }
+                                batobox_shipping_json = {
+                                    'currency': currency.badge,
+                                    'weight_from': shipping_base_on_calculated_weight.weight_from,
+                                    'weight_to': shipping_base_on_calculated_weight.weight_to,
+                                    'price': shipping_base_on_calculated_weight.price,
+                                    'unique_code': shipping_base_on_calculated_weight.unique_code,
+                                }
+                                batobox_currency_exchange_commission_json = {
+                                    'currency': currency.badge,
+                                    'price_from': commission_base_on_calculated_total_price.price_from,
+                                    'price_to': commission_base_on_calculated_total_price.price_to,
+                                    'exchange_percentage': commission_base_on_calculated_total_price.exchange_percentage,
+                                    'unique_code': commission_base_on_calculated_total_price.unique_code,
+                                }
+
+                                batobox_shipping_price = shipping_base_on_calculated_weight.price
+                                final_price = total_price + batobox_shipping_price
+                                currency_exchange_percentage = commission_base_on_calculated_total_price.exchange_percentage
+                                currency_equivalent_price_in_toman = currency.currency_equivalent_price_in_toman
+                                final_price_in_toman = (final_price + batobox_shipping_price) * float(
+                                    currency_equivalent_price_in_toman) * float(
+                                    f'1.{currency_exchange_percentage}')
+                                final_price_in_toman = int(round(final_price_in_toman, -3))
+
+                                requested_product.currency = json.dumps(currency_json)
+                                requested_product.batobox_shipping = json.dumps(batobox_shipping_json)
+                                requested_product.batobox_currency_exchange_commission = json.dumps(
+                                    batobox_currency_exchange_commission_json)
+                                requested_product.batobox_shipping_price = batobox_shipping_price
+                                requested_product.final_price = final_price
+                                requested_product.currency_equivalent_price_in_toman = currency_equivalent_price_in_toman
+                                requested_product.currency_exchange_percentage = currency_exchange_percentage
+                                requested_product.final_price_in_toman = final_price_in_toman
+                                requested_product.save()
+                                update_request_list.append(requested_product)
+                            except:
+                                remove_request_list.append(requested_product)
+
+                    updated_request_serializer = RequestedProductSerializer(update_request_list, many=True)
+                    removed_request_serializer = RequestedProductSerializer(remove_request_list, many=True)
+                    json_response_body = {
+                        'method': 'post',
+                        'request': 'بروز رسانی محصولات درخواستی',
+                        'result': 'موفق',
+                        'updated_request': updated_request_serializer.data,
+                        'removed_request': removed_request_serializer.data
+                    }
+                    return JsonResponse(json_response_body)
+                except Exception as e:
+                    return JsonResponse(create_json('post', 'بروز رسانی محصولات درخواستی', 'ناموفق',
+                                                    f'اطلاعات محصولات با لیست ایدی {product_id_list}یافت نشد یا متعلق به کاربر نمی باشد.'))
+            except Exception as e:
+                print(str(e))
+                return JsonResponse(
+                    create_json('post', 'بروز رسانی محصولات درخواستی', 'ناموفق', f'داده ورودی کامل ارسال نشده است'))
+        except Exception as e:
+            print(str(e))
+            return JsonResponse(create_json('post', 'بروز رسانی محصولات درخواستی', 'ناموفق', f'ورودی صحیح نیست.'))
 
     def put(self, request, *args, **kwargs):
         return JsonResponse({'message': 'not allowed'})
@@ -525,11 +580,23 @@ class ProductListView(APIView):
                                                 f'در حال حاضر تنها محصولات آمازون بتوباکس پشتیبانی می شود'))
             try:
                 try:
-                    ordering = front_input['ordering']
+                    ordering = front_input['ordering'] # asc or desc
                     if ordering == '':
                         raise
                 except:
                     ordering = None
+                try:
+                    is_available = front_input['is_available']
+                    if is_available == '':
+                        raise
+                    else:
+                        is_available = str(is_available).lower()
+                        if is_available == 'true':
+                            is_available = True
+                        else:
+                            is_available = None
+                except:
+                    is_available = None
                 try:
                     date_range_from = front_input['date_range_from']
                     if date_range_from == '':
@@ -611,19 +678,6 @@ class ProductListView(APIView):
                 except:
                     brand = None
                 try:
-                    is_available = front_input['is_available']
-                    if is_available == '':
-                        raise
-                    is_available = str(is_available).lower()
-                    if is_available == 'true':
-                        is_available = True
-                    elif is_available == 'false':
-                        is_available = False
-                    else:
-                        is_available = None
-                except:
-                    is_available = None
-                try:
                     is_special = front_input['is_special']
                     if is_special == '':
                         raise
@@ -687,13 +741,11 @@ class ProductListView(APIView):
                                 Q(**{f'keywords__title_en__icontains': keyword_word}) |
                                 Q(**{f'keywords__title_slug__icontains': keyword_word})
                         )
-                if brand is not None :
+                if brand is not None:
                     q &= Q(**{f'brand__icontains': brand})
-                if is_available is not None:
-                    q &= Q(**{f'is_product_available': is_available})
                 if is_special is not None:
                     q &= Q(**{f'is_product_special': is_special})
-                if searched_word is not None :
+                if searched_word is not None:
                     q &= (
                             Q(**{f'asin__icontains': searched_word}) |
                             Q(**{f'title_fa__icontains': searched_word}) |
@@ -703,12 +755,21 @@ class ProductListView(APIView):
                             Q(**{f'attributes__icontains': searched_word}) |
                             Q(**{f'specifications__icontains': searched_word})
                     )
-                custom_log(q)
+                if is_available:
+                    q &= (
+                        Q(**{'is_product_available': True}) &
+                        Q(**{'total_price__gte': 0}) &
+                        Q(**{'total_price__isnull': False})
+                    )
                 if ordering:
-                    if ordering == 'date':
+                    if ordering == 'date_desc':
                         amazon_products = AmazonProduct.objects.filter(q).order_by('-created_at')
-                    elif ordering == 'price':
+                    elif ordering == 'date_asc':
+                        amazon_products = AmazonProduct.objects.filter(q).order_by('created_at')
+                    elif ordering == 'price_desc':
                         amazon_products = AmazonProduct.objects.filter(q).order_by('total_price')
+                    elif ordering == 'price_asc':
+                        amazon_products = AmazonProduct.objects.filter(q).order_by('-total_price')
                     else:
                         amazon_products = AmazonProduct.objects.filter(q)
                 else:

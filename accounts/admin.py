@@ -55,7 +55,6 @@ class OrderAdmin(admin.ModelAdmin):
     list_display = (
         'display_id_display',
         'requested_product_id_display',
-        'order_status',
         'description',
         'created_at_display',
         'updated_at_display',
@@ -68,17 +67,12 @@ class OrderAdmin(admin.ModelAdmin):
         'updated_by',
     )
 
-    list_filter = (
-        'order_status',
-    )
-
     search_fields = (
         'pk',
     )
 
     fields = (
         'products',
-        'order_status',
         'description',
         'first_name',
         'last_name',
