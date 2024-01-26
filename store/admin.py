@@ -83,6 +83,10 @@ class ProductAdmin(admin.ModelAdmin):
         'pk',
     )
 
+    list_filter = (
+        'request_status',
+    )
+
     readonly_fields = (
         'created_at',
         'updated_at',

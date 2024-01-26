@@ -210,7 +210,7 @@ class MessageListView(APIView):
             front_input = json.loads(request.body)
             try:
                 ticket_id = front_input['ticket_id']
-                messages = Message.objects.filter(ticket__id=ticket_id)
+                messages = Message.objects.filter(ticket__id=ticket_id, ticket__belong_to=request.user)
                 if messages.count() == 0:
                     return JsonResponse(
                         create_json('post', 'لیست پیام های تیکت', 'ناموفق',

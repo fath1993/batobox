@@ -87,7 +87,8 @@ def update_amazon_product_from_rainforest_api(amazon_product):
                 translator = Translator()
                 title_fa = translator.translate(product_title, dest='fa').text
                 if str(title_fa) != '':
-                    amazon_product.title_fa = title_fa
+                    if not amazon_product.title_fa:
+                        amazon_product.title_fa = title_fa
                     if not amazon_product.seo_title:
                         amazon_product.seo_title = title_fa
                     if not amazon_product.seo_description:

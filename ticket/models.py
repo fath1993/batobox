@@ -60,8 +60,9 @@ class Message(models.Model):
         self.ticket.updated_by = self.created_by
         if self.created_by.is_superuser or self.created_by.is_staff:
             self.ticket.status = 'پاسخ ادمین'
+            self.ticket.has_seen_by_user = False
         else:
             self.ticket.status = 'پاسخ کاربر'
-            self.ticket.has_seen_by_user = False
+            self.ticket.has_seen_by_user = True
         self.ticket.save()
         super().save(*args, **kwargs)

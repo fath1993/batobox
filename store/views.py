@@ -1018,7 +1018,6 @@ class OrderView(APIView):
                         create_json('post', 'ثبت سفارش', 'ناموفق',
                                     f'محصولی انتخاب نشده است'))
                 new_order = Order.objects.create(
-                    order_status='در حال بررسی',
                     description='خرید محصول',
                     first_name=request.user.user_profile.first_name,
                     last_name=request.user.user_profile.last_name,
@@ -1298,9 +1297,15 @@ class PayConfirmView(APIView):
                         if transaction.ref_id == 'شارژ اعتبار حساب':
                             profile.wallet_balance += transaction.amount
                             profile.save()
-                            order.order_status = 'تکمیل شده'
+                            order_products_all = order.products.all()
+                            for order_product in order_products_all:
+                                order_product.request_status = 'تکمیل شده'
+                                order_product.save()
                         else:
-                            order.order_status = 'پرداخت شده و در انتظار بررسی'
+                            order_products_all = order.products.all()
+                            for order_product in order_products_all:
+                                order_product.request_status = 'پرداخت شده و در انتظار بررسی'
+                                order_product.save()
                         ref_id = result['data']['ref_id']
                         transaction.ref_id = ref_id
                         transaction.status = 'پرداخت شده'
