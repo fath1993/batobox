@@ -226,8 +226,6 @@ class ProductPriceCalculator(APIView):
                     currency = Currency.objects.get(badge='AED')
                     weight = amazon_product.weight
                     price = amazon_product.total_price
-                    total_price = price * numbers
-                    total_weight = weight * numbers
                 else:
                     try:
                         currency = front_input['currency']
@@ -313,9 +311,8 @@ class ProductPriceCalculator(APIView):
                 currency_exchange_percentage = related_commission.exchange_percentage
                 currency_equivalent_price_in_toman = currency.currency_equivalent_price_in_toman
                 currency_equivalent_price_in_toman_with_commission = float(currency_equivalent_price_in_toman) * float(f'1.{currency_exchange_percentage}')
-                price_with_shipping_and_commission_in_toman = price_with_shipping * currency_equivalent_price_in_toman_with_commission
+                price_with_shipping_and_commission_in_toman = int(round(price_with_shipping * currency_equivalent_price_in_toman_with_commission, -3))
                 price_with_shipping_and_commission_in_toman_with_number = price_with_shipping_and_commission_in_toman * numbers
-                price_with_shipping_and_commission_in_toman_with_number = int(round(price_with_shipping_and_commission_in_toman_with_number, -3))
 
                 new_requested_product = RequestedProduct.objects.create(
                     link=default_provided_url,
@@ -471,10 +468,9 @@ class UpdateRequestedProductsView(APIView):
                                 currency_equivalent_price_in_toman = currency.currency_equivalent_price_in_toman
                                 currency_equivalent_price_in_toman_with_commission = float(
                                     currency_equivalent_price_in_toman) * float(f'1.{currency_exchange_percentage}')
-                                price_with_shipping_and_commission_in_toman = price_with_shipping * currency_equivalent_price_in_toman_with_commission
+                                price_with_shipping_and_commission_in_toman = int(round(price_with_shipping * currency_equivalent_price_in_toman_with_commission, -3))
                                 price_with_shipping_and_commission_in_toman_with_number = price_with_shipping_and_commission_in_toman * requested_product.numbers
-                                price_with_shipping_and_commission_in_toman_with_number = int(
-                                    round(price_with_shipping_and_commission_in_toman_with_number, -3))
+
                                 requested_product.currency = json.dumps(currency_json)
                                 requested_product.batobox_shipping = json.dumps(batobox_shipping_json)
                                 requested_product.batobox_currency_exchange_commission = json.dumps(
