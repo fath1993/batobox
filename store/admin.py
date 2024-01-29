@@ -76,7 +76,8 @@ class ProductAdmin(admin.ModelAdmin):
         'request_status',
         'link',
         'description',
-        'final_price',
+        'final_price_in_toman_single',
+        'final_price_in_toman_multiple',
     )
 
     search_fields = (
@@ -107,7 +108,8 @@ class ProductAdmin(admin.ModelAdmin):
         'final_price',
         'currency_equivalent_price_in_toman',
         'currency_exchange_percentage',
-        'final_price_in_toman',
+        'final_price_in_toman_single',
+        'final_price_in_toman_multiple',
         'created_at',
         'updated_at',
         'created_by',

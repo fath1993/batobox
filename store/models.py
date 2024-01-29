@@ -94,8 +94,8 @@ class RequestedProduct(models.Model):
                                                                      verbose_name='قیمت واحد ارز به تومان')
     currency_exchange_percentage = models.PositiveIntegerField(null=True, blank=True,
                                                                verbose_name='درصد کمیسیون تبدیل ارز')
-    final_price_in_toman = models.PositiveIntegerField(null=True, blank=True, verbose_name='قیمت نهایی به تومان')
-
+    final_price_in_toman_single = models.PositiveIntegerField(null=True, blank=True, verbose_name='قیمت نهایی تک محصول به تومان')
+    final_price_in_toman_multiple = models.PositiveIntegerField(null=True, blank=True, verbose_name='قیمت نهایی محصول با احتساب تعداد به تومان')
 
     created_at = jmodel.jDateTimeField(auto_now_add=True, verbose_name='تاریخ ایجاد')
     updated_at = jmodel.jDateTimeField(auto_now=True, verbose_name='تاریخ بروز رسانی')

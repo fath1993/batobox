@@ -31,7 +31,7 @@ def test_product_price_calculator_calculate_price_amazon_product():
 
     product_link = 'https://www.amazon.ae/Dell-Latitude-7490-Touchscreen-Business/dp/B0CL39CDW5'
     process_type = 'calculate_price'
-    numbers = '1'
+    numbers = '2'
     description = 'دریافت داده در حالت دریافت  اطلاعات از رین فارست'
 
     headers = {
@@ -59,7 +59,7 @@ def test_product_price_calculator_calculate_price_other_product():
     currency = 'AED'
     weight = '200'
     price = '100'
-    numbers = '1'
+    numbers = '3'
     description = 'دریافت داده در حالت دریافت  اطلاعات از رین فارست'
 
     headers = {
@@ -85,7 +85,7 @@ def test_product_price_calculator_calculate_price_other_product():
 def test_update_request_products():
     url = f'https://api.batobox.net/store/api/update-request-products/'
 
-    request_product_id_list = '102, 103'
+    request_product_id_list = '310, 311'
 
     headers = {
         'Authorization': 'BatoboxToken 7b34ed182060d88027f6481ccca976fa3ff53123acc852505f18a2f922ce8d51'
