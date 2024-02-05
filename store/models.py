@@ -89,7 +89,6 @@ class RequestedProduct(models.Model):
 
     product_price = models.PositiveIntegerField(null=True, blank=True, verbose_name='قیمت محصول به واحد ارز')
     batobox_shipping_price = models.PositiveIntegerField(null=True, blank=True, verbose_name='قیمت حمل و نقل به واحد ارز')
-    final_price = models.PositiveIntegerField(null=True, blank=True, verbose_name='قیمت نهایی به واحد ارز')
     currency_equivalent_price_in_toman = models.PositiveIntegerField(null=True, blank=True,
                                                                      verbose_name='قیمت واحد ارز به تومان')
     currency_exchange_percentage = models.PositiveIntegerField(null=True, blank=True,

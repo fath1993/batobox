@@ -749,16 +749,9 @@ class WalletChargeView(APIView):
                 amount = front_input['amount']
 
                 new_order = Order.objects.create(
-                    order_status='در حال بررسی',
                     description='شارژ اعتبار حساب',
                     first_name=request.user.user_profile.first_name,
                     last_name=request.user.user_profile.last_name,
-                    national_code=request.user.user_profile.national_code,
-                    email=request.user.email,
-                    mobile_phone_number=request.user.username,
-                    landline=request.user.user_profile.landline,
-                    card_number=request.user.user_profile.card_number,
-                    isbn=request.user.user_profile.isbn,
                     receiver_province='-',
                     receiver_city='-',
                     receiver_zip_code='-',
@@ -819,7 +812,6 @@ class WalletChargeView(APIView):
                                 'result': 'موفق',
                                 'order_detail': {
                                     'products': 'شارژ اعتبار حساب',
-                                    'order_status': 'در حال بررسی',
                                     'created_at': str(new_order.created_at),
                                     'updated_at': str(new_order.updated_at),
                                     'created_by': new_order.created_by.username,

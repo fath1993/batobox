@@ -80,12 +80,7 @@ class Order(models.Model):
     # user who has ordered product
     first_name = models.CharField(max_length=255, null=True, blank=True, verbose_name='نام')
     last_name = models.CharField(max_length=255, null=True, blank=True, verbose_name='نام خانوادگی')
-    national_code = models.CharField(max_length=255, null=True, blank=True, verbose_name='کد ملی')
-    email = models.CharField(max_length=255, null=True, blank=True, verbose_name='ایمیل')
-    mobile_phone_number = models.CharField(max_length=255, null=True, blank=True, verbose_name='شماره تماس همراه')
-    landline = models.CharField(max_length=255, null=True, blank=True, verbose_name='شماره تماس ثابت')
-    card_number = models.CharField(max_length=255, null=True, blank=True, verbose_name='شماره کارت')
-    isbn = models.CharField(max_length=255, null=True, blank=True, verbose_name='شماره شبا')
+
     # user who will receive product
     receiver_province = models.CharField(max_length=255, null=True, blank=True, verbose_name='استان گیرنده')
     receiver_city = models.CharField(max_length=255, null=True, blank=True, verbose_name='شهر گیرنده')

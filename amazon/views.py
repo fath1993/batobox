@@ -289,6 +289,7 @@ def update_amazon_product_from_rainforest_api(amazon_product):
             if product_weight != 0:
                 amazon_product.weight = product_weight
         except Exception as e:
+            custom_log(str(e))
             pass
         try:
             product_buybox_winner_price_currency = product_api_data['product']['buybox_winner']['price'][

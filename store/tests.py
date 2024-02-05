@@ -5,13 +5,13 @@ from batobox.settings import BASE_DIR, BASE_URL
 def test_product_price_calculator_fetch_data():
     url = f'https://api.batobox.net/store/api/product-price-calculator/'
 
-    product_link = 'https://www.amazon.ae/Dell-Latitude-7490-Touchscreen-Business/dp/B0CL39CDW5'
+    product_link = 'https://www.amazon.ae/Andoer-Canceling-Gaming-Headset-Control/dp/B08319YFYW/ref=sr_1_1?_encoding=UTF8&content-id=amzn1.sym.f468f86c-3c20-47e1-91cd-bc7d1f3e4d76&pd_rd_r=8862014f-7925-407b-bd52-248b06800461&pd_rd_w=D0vws&pd_rd_wg=F96yw&pf_rd_p=f468f86c-3c20-47e1-91cd-bc7d1f3e4d76&pf_rd_r=HY6WHJ29C3S8EY2JP84D&qid=1707119236&s=electronics&sr=1-1&srs=88606009031'
     process_type = 'fetch_data_from_amazon'
     numbers = '1'
     description = 'دریافت داده در حالت دریافت  اطلاعات از رین فارست'
 
     headers = {
-        'Authorization': 'BatoboxToken 7b34ed182060d88027f6481ccca976fa3ff53123acc852505f18a2f922ce8d51'
+        'Authorization': 'BatoboxToken 6b50cacefd3d805de2f119dfbcb871c2d4d2767f0a94b466d4df4a27e53c1062'
     }
     data = {
         'product_link': product_link,
@@ -29,13 +29,13 @@ def test_product_price_calculator_fetch_data():
 def test_product_price_calculator_calculate_price_amazon_product():
     url = f'https://api.batobox.net/store/api/product-price-calculator/'
 
-    product_link = 'https://www.amazon.ae/Dell-Latitude-7490-Touchscreen-Business/dp/B0CL39CDW5'
+    product_link = 'https://www.amazon.ae/Andoer-Canceling-Gaming-Headset-Control/dp/B08319YFYW/ref=sr_1_1?_encoding=UTF8&content-id=amzn1.sym.f468f86c-3c20-47e1-91cd-bc7d1f3e4d76&pd_rd_r=8862014f-7925-407b-bd52-248b06800461&pd_rd_w=D0vws&pd_rd_wg=F96yw&pf_rd_p=f468f86c-3c20-47e1-91cd-bc7d1f3e4d76&pf_rd_r=HY6WHJ29C3S8EY2JP84D&qid=1707119236&s=electronics&sr=1-1&srs=88606009031'
     process_type = 'calculate_price'
     numbers = '2'
     description = 'دریافت داده در حالت دریافت  اطلاعات از رین فارست'
 
     headers = {
-        'Authorization': 'BatoboxToken 7b34ed182060d88027f6481ccca976fa3ff53123acc852505f18a2f922ce8d51'
+        'Authorization': 'BatoboxToken 6b50cacefd3d805de2f119dfbcb871c2d4d2767f0a94b466d4df4a27e53c1062'
     }
 
     data = {
@@ -63,7 +63,7 @@ def test_product_price_calculator_calculate_price_other_product():
     description = 'دریافت داده در حالت دریافت  اطلاعات از رین فارست'
 
     headers = {
-        'Authorization': 'BatoboxToken 7b34ed182060d88027f6481ccca976fa3ff53123acc852505f18a2f922ce8d51'
+        'Authorization': 'BatoboxToken 6b50cacefd3d805de2f119dfbcb871c2d4d2767f0a94b466d4df4a27e53c1062'
     }
 
     data = {
@@ -85,10 +85,10 @@ def test_product_price_calculator_calculate_price_other_product():
 def test_update_request_products():
     url = f'https://api.batobox.net/store/api/update-request-products/'
 
-    request_product_id_list = '310, 311'
+    request_product_id_list = '559,560'
 
     headers = {
-        'Authorization': 'BatoboxToken 7b34ed182060d88027f6481ccca976fa3ff53123acc852505f18a2f922ce8d51'
+        'Authorization': 'BatoboxToken 6b50cacefd3d805de2f119dfbcb871c2d4d2767f0a94b466d4df4a27e53c1062'
     }
 
     data = {

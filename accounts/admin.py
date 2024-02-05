@@ -76,12 +76,6 @@ class OrderAdmin(admin.ModelAdmin):
         'description',
         'first_name',
         'last_name',
-        'national_code',
-        'email',
-        'mobile_phone_number',
-        'landline',
-        'card_number',
-        'isbn',
         'receiver_province',
         'receiver_city',
         'receiver_zip_code',
@@ -144,6 +138,10 @@ class TransactionAdmin(admin.ModelAdmin):
 
     search_fields = (
         'order__id',
+    )
+
+    list_filter = (
+        'status',
     )
 
     readonly_fields = (

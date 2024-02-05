@@ -307,13 +307,15 @@ class ProductPriceCalculator(APIView):
                 }
 
                 batobox_shipping_price = related_shipping.price
-                price_with_shipping = price + batobox_shipping_price
-                currency_exchange_percentage = related_commission.exchange_percentage
                 currency_equivalent_price_in_toman = currency.currency_equivalent_price_in_toman
-                currency_equivalent_price_in_toman_with_commission = float(currency_equivalent_price_in_toman) * float(f'1.{currency_exchange_percentage}')
-                price_with_shipping_and_commission_in_toman = int(round(price_with_shipping * currency_equivalent_price_in_toman_with_commission, -3))
-                price_with_shipping_and_commission_in_toman_with_number = price_with_shipping_and_commission_in_toman * numbers
+                currency_exchange_percentage = related_commission.exchange_percentage
 
+                price_in_tomans = int(round(price * currency_equivalent_price_in_toman, -3))
+                batobox_shipping_price_in_tomans = int(round(batobox_shipping_price * currency_equivalent_price_in_toman, -3))
+                commission_in_tomans = int(round(price * float(f'0.{currency_exchange_percentage}') * currency_equivalent_price_in_toman, -3))
+
+                final_price_single = price_in_tomans + batobox_shipping_price_in_tomans + commission_in_tomans
+                final_price_multiple = final_price_single * numbers
                 new_requested_product = RequestedProduct.objects.create(
                     link=default_provided_url,
                     currency=json.dumps(currency_json),
@@ -324,11 +326,10 @@ class ProductPriceCalculator(APIView):
                     numbers=numbers,
                     product_price=price,
                     batobox_shipping_price=batobox_shipping_price,
-                    final_price=price_with_shipping,
                     currency_equivalent_price_in_toman=currency_equivalent_price_in_toman,
                     currency_exchange_percentage=currency_exchange_percentage,
-                    final_price_in_toman_single=price_with_shipping_and_commission_in_toman,
-                    final_price_in_toman_multiple=price_with_shipping_and_commission_in_toman_with_number,
+                    final_price_in_toman_single=final_price_single,
+                    final_price_in_toman_multiple=final_price_multiple,
                     created_at=request.user,
                     created_by=request.user,
                 )
@@ -463,24 +464,28 @@ class UpdateRequestedProductsView(APIView):
                                 }
 
                                 batobox_shipping_price = related_shipping.price
-                                price_with_shipping = price + batobox_shipping_price
                                 currency_exchange_percentage = related_commission.exchange_percentage
                                 currency_equivalent_price_in_toman = currency.currency_equivalent_price_in_toman
-                                currency_equivalent_price_in_toman_with_commission = float(
-                                    currency_equivalent_price_in_toman) * float(f'1.{currency_exchange_percentage}')
-                                price_with_shipping_and_commission_in_toman = int(round(price_with_shipping * currency_equivalent_price_in_toman_with_commission, -3))
-                                price_with_shipping_and_commission_in_toman_with_number = price_with_shipping_and_commission_in_toman * requested_product.numbers
+
+
+                                price_in_tomans = int(round(price * currency_equivalent_price_in_toman, -3))
+                                batobox_shipping_price_in_tomans = int(
+                                    round(batobox_shipping_price * currency_equivalent_price_in_toman, -3))
+                                commission_in_tomans = int(round(price * float(
+                                    f'0.{currency_exchange_percentage}') * currency_equivalent_price_in_toman, -3))
+
+                                final_price_single = price_in_tomans + batobox_shipping_price_in_tomans + commission_in_tomans
+                                final_price_multiple = final_price_single * requested_product.numbers
 
                                 requested_product.currency = json.dumps(currency_json)
                                 requested_product.batobox_shipping = json.dumps(batobox_shipping_json)
                                 requested_product.batobox_currency_exchange_commission = json.dumps(
                                     batobox_currency_exchange_commission_json)
                                 requested_product.batobox_shipping_price = batobox_shipping_price
-                                requested_product.final_price = price_with_shipping
                                 requested_product.currency_equivalent_price_in_toman = currency_equivalent_price_in_toman
                                 requested_product.currency_exchange_percentage = currency_exchange_percentage
-                                requested_product.final_price_in_toman_single = price_with_shipping_and_commission_in_toman
-                                requested_product.final_price_in_toman_multiple = price_with_shipping_and_commission_in_toman_with_number
+                                requested_product.final_price_in_toman_single = final_price_single
+                                requested_product.final_price_in_toman_multiple = final_price_multiple
                                 requested_product.save()
                                 update_request_list.append(requested_product)
                             except Exception as e:
@@ -496,8 +501,10 @@ class UpdateRequestedProductsView(APIView):
                         'updated_request': updated_request_serializer.data,
                         'removed_request': removed_request_serializer.data
                     }
+                    ProductCalculatorAccessHistory.objects.create(created_by=request.user)
                     return JsonResponse(json_response_body)
                 except Exception as e:
+                    custom_log(f'{e}')
                     return JsonResponse(create_json('post', 'بروز رسانی محصولات درخواستی', 'ناموفق',
                                                     f'اطلاعات محصولات با لیست ایدی {product_id_list}یافت نشد یا متعلق به کاربر نمی باشد.'))
             except Exception as e:
@@ -980,11 +987,6 @@ class OrderView(APIView):
                 except:
                     return JsonResponse(
                         create_json('post', 'ثبت سفارش', 'ناموفق', f'مقدار receiver_address وارد نشده است'))
-                try:
-                    receiver_mobile_phone_number = front_input['receiver_mobile_phone_number']
-                except:
-                    return JsonResponse(
-                        create_json('post', 'ثبت سفارش', 'ناموفق', f'مقدار receiver_mobile_phone_number وارد نشده است'))
                 pay_type = front_input['pay_type']  # pay_type = [wallet, direct]
                 if not pay_type:
                     return JsonResponse(
@@ -1024,17 +1026,10 @@ class OrderView(APIView):
                     description='خرید محصول',
                     first_name=request.user.user_profile.first_name,
                     last_name=request.user.user_profile.last_name,
-                    national_code=request.user.user_profile.national_code,
-                    email=request.user.email,
-                    mobile_phone_number=request.user.username,
-                    landline=request.user.user_profile.landline,
-                    card_number=request.user.user_profile.card_number,
-                    isbn=request.user.user_profile.isbn,
                     receiver_province=receiver_province,
                     receiver_city=receiver_city,
                     receiver_zip_code=receiver_zip_code,
                     receiver_address=receiver_address,
-                    receiver_mobile_phone_number=receiver_mobile_phone_number,
                     created_by=request.user,
                     updated_by=request.user,
                 )
@@ -1097,7 +1092,7 @@ class OrderView(APIView):
                     mobile=request.user.username,
                     authority=authority,
                     ref_id=ref_id,
-                    status='در حال بررسی',
+                    status='پرداخت نشده',
                 )
                 this_order = Order.objects.filter(id=new_order.id)
                 if this_order.count() == 0:

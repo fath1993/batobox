@@ -130,7 +130,7 @@ STATICFILES_DIRS = [
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-BASE_URL = 'http://127.0.0.1:8000/'
+BASE_URL = 'https://api.batobox.net/'
 
 BASE_FRONT_URL = 'https://batobox.iran.liara.run/'
 

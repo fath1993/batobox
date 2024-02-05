@@ -358,7 +358,6 @@ class Docs(APIView):
                             'result': 'موفق',
                             'order_detail': {
                                 'products': 'شارژ اعتبار حساب',
-                                'order_status': 'در حال بررسی',
                                 'created_at': 'زمان ایجاد',
                                 'updated_at': 'زمان بروزرسانی',
                                 'created_by': 'ایجاد شده توسط',

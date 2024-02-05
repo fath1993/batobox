@@ -105,7 +105,6 @@ class ProductAdmin(admin.ModelAdmin):
         'numbers',
         'product_price',
         'batobox_shipping_price',
-        'final_price',
         'currency_equivalent_price_in_toman',
         'currency_exchange_percentage',
         'final_price_in_toman_single',
