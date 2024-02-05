@@ -968,6 +968,16 @@ class OrderView(APIView):
             front_input = json.loads(request.body)
             try:
                 try:
+                    firstname = front_input['firstname']
+                except:
+                    return JsonResponse(
+                        create_json('post', 'ثبت سفارش', 'ناموفق', f'مقدار firstname وارد نشده است'))
+                try:
+                    lastname = front_input['lastname']
+                except:
+                    return JsonResponse(
+                        create_json('post', 'ثبت سفارش', 'ناموفق', f'مقدار lastname وارد نشده است'))
+                try:
                     receiver_province = front_input['receiver_province']
                 except:
                     return JsonResponse(
@@ -1024,8 +1034,8 @@ class OrderView(APIView):
                                     f'محصولی انتخاب نشده است'))
                 new_order = Order.objects.create(
                     description='خرید محصول',
-                    first_name=request.user.user_profile.first_name,
-                    last_name=request.user.user_profile.last_name,
+                    first_name=firstname,
+                    last_name=lastname,
                     receiver_province=receiver_province,
                     receiver_city=receiver_city,
                     receiver_zip_code=receiver_zip_code,
@@ -1315,7 +1325,7 @@ class PayConfirmView(APIView):
                 order.save()
                 payment_code.is_used = True
                 payment_code.save()
-                if status == 'پرداخت شده':
+                if transaction.status == 'پرداخت شده':
                     return redirect(f'{BASE_FRONT_URL}profile?tab=wallet&status=ok&ref-id={ref_id}')
                 else:
                     return redirect(

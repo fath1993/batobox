@@ -1063,6 +1063,8 @@ class Docs(APIView):
                         'سبک داده مورد پذیرش': 'جیسون json',
                         'داده های ارسالی': {
                             'pay_type': 'wallet or direct',
+                            'firstname': 'نام',
+                            'lastname': 'نام خانوادگی',
                             'requested_products_id_list': 'لیست آیدی های محصولات درخواستی',
                             'receiver_province': 'استان گیرنده',
                             'receiver_city': 'شهر گیرنده',
